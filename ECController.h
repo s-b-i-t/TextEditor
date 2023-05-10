@@ -34,15 +34,18 @@ public:
 
     void Undo();
 
+    void HandleEnter();
+
     string getCurStatus()
     {
         return curStatus;
     }
 
+    vector<string> getRows() {return Rows;}
+
 private:
     ECTextViewImp *_TextViewImp;
     vector<string> Rows;
-    vector<string> tmpVector;
     string _filename;
     std::string curStatus = "command";
     stack<Operation> undoStack;

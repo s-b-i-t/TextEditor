@@ -53,17 +53,7 @@ void ECController::HandleKey(int key)
         int current_y = _TextViewImp->GetCursorY();
         int current_x = _TextViewImp->GetCursorX();
 
-        // if (current_x == 0 && current_y < tmpVector.size() && !tmpVector[current_y].empty())
-        // {
-        //     char ch = tmpVector[current_y].back();
-        //     tmpVector[current_y].pop_back();
-        //     Rows[current_y].insert(0, 1, ch);
-        //     _TextViewImp->SetCursorX(1);
-        // }
-        // else
-        // {
         _TextViewImp->SetCursorX(max(current_x - 1, 0));
-        // }
         break;
     }
 
@@ -129,26 +119,6 @@ void ECController::HandleKey(int key)
         }
         break;
     }
-    case ENTER:
-    {
-        int current_x = _TextViewImp->GetCursorX();
-        int current_y = _TextViewImp->GetCursorY();
-
-        if (current_y >= Rows.size())
-        {
-            Rows.resize(current_y + 1);
-        }
-
-        string remaining_text = Rows[current_y].substr(current_x);
-        Rows[current_y].erase(current_x);
-
-        Rows.insert(Rows.begin() + current_y + 1, remaining_text);
-        _TextViewImp->SetCursorY(current_y + 1);
-        _TextViewImp->SetCursorX(0);
-        _TextViewImp->Refresh();
-        UpdateTextViewImpRows();
-        break;
-    }
     case CTRL_Q:
     {
         exit(0);
@@ -175,6 +145,25 @@ void ECController::HandleKey(int key)
 
     _TextViewImp->Refresh();
 }
+
+void ECController::HandleEnter() {
+    int current_x = _TextViewImp->GetCursorX();
+    int current_y = _TextViewImp->GetCursorY();
+
+    if (current_y >= Rows.size()) {
+        Rows.resize(current_y + 1);
+    }
+
+    string remaining_text = Rows[current_y].substr(current_x);
+    Rows[current_y].erase(current_x, string::npos);
+
+    Rows.insert(Rows.begin() + current_y + 1, remaining_text);
+    _TextViewImp->SetCursorY(current_y + 1);
+    _TextViewImp->SetCursorX(0);
+    _TextViewImp->Refresh();
+    UpdateTextViewImpRows();
+}
+
 
 void ECController::AddText(char ch)
 {
