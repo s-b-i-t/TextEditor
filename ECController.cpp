@@ -118,18 +118,35 @@ void ECController::HandleKey(int key)
     }
     case ARROW_DOWN:
     {
+        
         int current_x = _TextViewImp->GetCursorX();
         int current_y = _TextViewImp->GetCursorY();
-        int max_y = Rows.size() - 1;
+        int max_y = _TextViewImp->GetRowNumInView() - 1;
+        
+        if (current_y == Rows.size() - 1)
+            break;
+        
         if (current_y < max_y)
         {
             int next_row_length = Rows[current_y + 1].length();
             int new_x = min(current_x, next_row_length);
+            if (current_y != max_y){
             _TextViewImp->SetCursorY(current_y + 1);
+            }
             _TextViewImp->SetCursorX(new_x);
+
+            
+        if (current_y >= _TextViewImp->GetRowNumInView())
+        {
+            int ErasedRow = current_y - _TextViewImp->GetRowNumInView();
+            DownRowDeque.push_back(Rows[ErasedRow]);
+            Rows.erase(Rows.begin() + ErasedRow);
         }
+        }
+
         break;
     }
+
     case CTRL_Q:
     {
         exit(0);
@@ -167,7 +184,7 @@ void ECController::AddText(char ch)
         Rows.resize(y + 1);
     }
 
-    if (x >= _TextViewImp->GetColNumInView() - 1) // We need to subtract 1 here to account for the new character being added
+    if (x >= _TextViewImp->GetColNumInView() - 1) // subtract 1 here to account for the new character being added
     {
         Rows[y].erase(0, 1);
         Rows[y].push_back(ch);
@@ -189,30 +206,28 @@ void ECController::AddText(char ch)
     UpdateTextViewImpRows();
     HighlightKeywords();
 
-    if (ch == '['){
+    if (ch == '[')
+    {
         AddText(']');
         _TextViewImp->SetCursorX(_TextViewImp->GetCursorX() - 1);
     }
-    if (ch == '{'){
+    if (ch == '{')
+    {
         AddText('}');
         _TextViewImp->SetCursorX(_TextViewImp->GetCursorX() - 1);
-
     }
-    if (ch == '('){
+    if (ch == '(')
+    {
         AddText(')');
         _TextViewImp->SetCursorX(_TextViewImp->GetCursorX() - 1);
-
     }
-    
-    if (ch == '<'){
+
+    if (ch == '<')
+    {
         AddText('>');
         _TextViewImp->SetCursorX(_TextViewImp->GetCursorX() - 1);
-
     }
-
 }
-
-
 
 void ECController::RemoveText()
 {
@@ -305,7 +320,9 @@ void ECController::HandleEnter()
     int current_x = _TextViewImp->GetCursorX();
     int current_y = _TextViewImp->GetCursorY();
 
-    if (current_y >= Rows.size())
+    int max_y = _TextViewImp->GetRowNumInView() - 1;
+
+    if (current_y == Rows.size()- 1 || Rows.size() == 0)
     {
         Rows.resize(current_y + 1);
     }
@@ -314,11 +331,19 @@ void ECController::HandleEnter()
     Rows[current_y].erase(current_x, string::npos);
 
     Rows.insert(Rows.begin() + current_y + 1, remaining_text);
-    _TextViewImp->SetCursorY(current_y + 1);
+
+    if (Rows.size() > max_y + 1) { // If the total number of rows in view would exceed max_y after inserting the new row
+        DownRowDeque.push_back(Rows[0]); // Push the first row in the view to the deque
+        Rows.erase(Rows.begin()); // Remove the first row from the view
+    }
+
+    _TextViewImp->SetCursorY(current_y == max_y ? max_y : current_y + 1); // Move the cursor to the next line if possible, otherwise keep it at the same line
     _TextViewImp->SetCursorX(0);
     _TextViewImp->Refresh();
     UpdateTextViewImpRows();
 }
+
+
 
 void ECController::UpdateTextViewImpRows()
 {
@@ -435,5 +460,3 @@ void ECController::HighlightKeywords()
     }
     _TextViewImp->Refresh();
 }
-
-

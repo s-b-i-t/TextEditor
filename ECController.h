@@ -6,11 +6,13 @@
 #include <vector>
 #include <iostream>
 #include <stack>
+#include <deque>
 #include <set>
 using namespace std;
 
+
 struct Operation {
-    enum Type { ADD, REMOVE } type;
+    enum Type { ADD, REMOVE, ENTER } type;
     char ch;
     int x, y;
 };
@@ -55,6 +57,9 @@ private:
     set<string> keywords;
     void LoadKeywords();
     void HighlightKeywords();
+    std::deque<string> UpRowDeque;
+    std::deque<string> DownRowDeque;
+
 };
 
 #endif
