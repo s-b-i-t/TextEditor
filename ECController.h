@@ -36,7 +36,6 @@ public:
     
     void Undo();
 
-
     string getCurStatus()
     {
         return curStatus;
@@ -50,6 +49,7 @@ private:
     std::string curStatus = "command";
     stack<Operation> undoStack;
     stack<Operation> redoStack;
+    std::vector<char> brackets = {'(', ')', '{', '}', '[', ']', '<', '>'};
 
     void UpdateTextViewImpRows();
     set<string> keywords;

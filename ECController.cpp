@@ -188,7 +188,31 @@ void ECController::AddText(char ch)
     _TextViewImp->Refresh();
     UpdateTextViewImpRows();
     HighlightKeywords();
+
+    if (ch == '['){
+        AddText(']');
+        _TextViewImp->SetCursorX(_TextViewImp->GetCursorX() - 1);
+    }
+    if (ch == '{'){
+        AddText('}');
+        _TextViewImp->SetCursorX(_TextViewImp->GetCursorX() - 1);
+
+    }
+    if (ch == '('){
+        AddText(')');
+        _TextViewImp->SetCursorX(_TextViewImp->GetCursorX() - 1);
+
+    }
+    
+    if (ch == '<'){
+        AddText('>');
+        _TextViewImp->SetCursorX(_TextViewImp->GetCursorX() - 1);
+
+    }
+
 }
+
+
 
 void ECController::RemoveText()
 {
@@ -376,7 +400,6 @@ void ECController::LoadKeywords()
 void ECController::HighlightKeywords()
 {
     _TextViewImp->ClearColor();
-    std::vector<char> brackets = {'(', ')', '{', '}', '[', ']', '<', '>'};
 
     int rowNum = 0;
     for (const auto &row : Rows)
@@ -412,6 +435,5 @@ void ECController::HighlightKeywords()
     }
     _TextViewImp->Refresh();
 }
-
 
 
