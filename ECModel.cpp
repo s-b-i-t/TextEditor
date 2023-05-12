@@ -5,17 +5,25 @@
 
 ECModel::ECModel(ECTextViewImp *TextViewImp, ECController *Controller) : _TextViewImp(TextViewImp), _Controller(Controller) {}
 
-void ECModel::Update(){
+void ECModel::Update()
+{
     int key = _TextViewImp->GetPressedKey();
 
-    if (key == ENTER){
+    if (key == ENTER)
+    {
         _Controller->HandleEnter();
-    } else if (key == BACKSPACE){
+    }
+    else if (key == BACKSPACE)
+    {
         _Controller->RemoveText();
-    } else if (key >= 32 && key <= 126 && _Controller->getCurStatus() == "insert"){
+    }
+    else if (key >= 32 && key <= 126 && _Controller->getCurStatus() == "insert")
+    {
         char ch = static_cast<char>(key);
         _Controller->AddText(ch);
-    } else {
+    }
+    else
+    {
         _Controller->HandleKey(key);
     }
 }

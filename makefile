@@ -6,6 +6,7 @@ OBJS = $(SRCS:.cpp=.o)
 
 ec: $(OBJS)
 	$(CXX) $(CXXFLAGS) $(OBJS) -o myeditor
+	rm -f $(OBJS)
 
 clean:
 	rm -f $(OBJS) myeditor

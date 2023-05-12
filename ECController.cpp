@@ -13,6 +13,7 @@ ECController::ECController(ECTextViewImp *TextViewImp, const std::string &filena
 {
     OpenFile();
     LoadKeywords();
+    HighlightKeywords();
 }
 
 void ECController::OpenFile()
@@ -53,7 +54,17 @@ void ECController::HandleKey(int key)
         int current_y = _TextViewImp->GetCursorY();
         int current_x = _TextViewImp->GetCursorX();
 
+        // if (current_x == 0 && current_y < tmpVector.size() && !tmpVector[current_y].empty())
+        // {
+        //     char ch = tmpVector[current_y].back();
+        //     tmpVector[current_y].pop_back();
+        //     Rows[current_y].insert(0, 1, ch);
+        //     _TextViewImp->SetCursorX(1);
+        // }
+        // else
+        // {
         _TextViewImp->SetCursorX(max(current_x - 1, 0));
+        // }
         break;
     }
 
@@ -146,25 +157,6 @@ void ECController::HandleKey(int key)
     _TextViewImp->Refresh();
 }
 
-void ECController::HandleEnter() {
-    int current_x = _TextViewImp->GetCursorX();
-    int current_y = _TextViewImp->GetCursorY();
-
-    if (current_y >= Rows.size()) {
-        Rows.resize(current_y + 1);
-    }
-
-    string remaining_text = Rows[current_y].substr(current_x);
-    Rows[current_y].erase(current_x, string::npos);
-
-    Rows.insert(Rows.begin() + current_y + 1, remaining_text);
-    _TextViewImp->SetCursorY(current_y + 1);
-    _TextViewImp->SetCursorX(0);
-    _TextViewImp->Refresh();
-    UpdateTextViewImpRows();
-}
-
-
 void ECController::AddText(char ch)
 {
     int y = _TextViewImp->GetCursorY();
@@ -219,16 +211,20 @@ void ECController::RemoveText()
         string &current_row = Rows[y];
         int previous_row_length = Rows[y - 1].length();
         removedChar = current_row[0];
+        Rows[y - 1] += current_row;
         Rows.erase(Rows.begin() + y);
         _TextViewImp->SetCursorY(y - 1);
         _TextViewImp->SetCursorX(previous_row_length);
-        Rows[y - 1] += current_row;
     }
+
     else
     {
-        removedChar = Rows[y][x - 1];
-        Rows[y].erase(x - 1, 1);
-        _TextViewImp->SetCursorX(x - 1);
+        if (x > 0)
+        {
+            removedChar = Rows[y][x - 1];
+            Rows[y].erase(x - 1, 1);
+            _TextViewImp->SetCursorX(x - 1);
+        }
     }
 
     // Push the operation onto the undo stack
@@ -245,16 +241,6 @@ void ECController::RemoveText()
     _TextViewImp->Refresh();
     UpdateTextViewImpRows();
     HighlightKeywords();
-}
-void ECController::UpdateTextViewImpRows()
-{
-    _TextViewImp->InitRows();
-    for (const auto &row : Rows)
-    {
-        _TextViewImp->AddRow(row);
-    }
-    HighlightKeywords();
-    _TextViewImp->Refresh();
 }
 
 void ECController::Undo()
@@ -288,6 +274,37 @@ void ECController::Undo()
     _TextViewImp->SetCursorX(op.x);
     _TextViewImp->Refresh();
     UpdateTextViewImpRows();
+}
+
+void ECController::HandleEnter()
+{
+    int current_x = _TextViewImp->GetCursorX();
+    int current_y = _TextViewImp->GetCursorY();
+
+    if (current_y >= Rows.size())
+    {
+        Rows.resize(current_y + 1);
+    }
+
+    string remaining_text = Rows[current_y].substr(current_x);
+    Rows[current_y].erase(current_x, string::npos);
+
+    Rows.insert(Rows.begin() + current_y + 1, remaining_text);
+    _TextViewImp->SetCursorY(current_y + 1);
+    _TextViewImp->SetCursorX(0);
+    _TextViewImp->Refresh();
+    UpdateTextViewImpRows();
+}
+
+void ECController::UpdateTextViewImpRows()
+{
+    _TextViewImp->InitRows();
+    for (const auto &row : Rows)
+    {
+        _TextViewImp->AddRow(row);
+    }
+    HighlightKeywords();
+    _TextViewImp->Refresh();
 }
 
 void ECController::Redo()
@@ -325,7 +342,20 @@ void ECController::Redo()
 
 void ECController::LoadKeywords()
 {
-    ifstream file("keywords.txt");
+    ifstream file;
+
+    if (_filename.substr(_filename.length() - 2) == "py")
+    {
+        file.open("pykeywords.txt");
+    }
+    else if (_filename.substr(_filename.length() - 3) == "cpp")
+    {
+        file.open("cppkeywords.txt");
+    }
+    else if (_filename.substr(_filename.length() - 1) == "c")
+    {
+        file.open("ckeywords.txt");
+    }
 
     if (file.is_open())
     {
@@ -346,10 +376,12 @@ void ECController::LoadKeywords()
 void ECController::HighlightKeywords()
 {
     _TextViewImp->ClearColor();
+    std::vector<char> brackets = {'(', ')', '{', '}', '[', ']', '<', '>'};
 
     int rowNum = 0;
     for (const auto &row : Rows)
     {
+        // Highlight keywords
         for (const auto &keyword : keywords)
         {
             std::regex keyword_regex("\\b" + keyword + "\\b");
@@ -363,6 +395,23 @@ void ECController::HighlightKeywords()
                 _TextViewImp->SetColor(rowNum, pos, pos + keyword.length(), TEXT_COLOR_BLUE);
             }
         }
+
+        // Highlight brackets
+        for (int i = 0; i < row.size(); i++)
+        {
+            for (int j = 0; j < brackets.size(); ++j)
+            {
+                if (row[i] == brackets[j])
+                {
+                    _TextViewImp->SetColor(rowNum, i, i + 1, TEXT_COLOR_RED);
+                }
+            }
+        }
+
         rowNum++;
     }
+    _TextViewImp->Refresh();
 }
+
+
+
