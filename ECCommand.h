@@ -2,52 +2,70 @@
 
 #ifndef ECCOMMAND_H
 #define ECCOMMAND_H
-
+#include <string>
 #include "ECTextViewImp.h"
+using namespace std;
+class ECController;
 
-class ECCommand
-{
+class ECCommand {
 public:
     virtual ~ECCommand() {}
     virtual void execute() = 0;
     virtual void unexecute() = 0;
+protected:
+
+    int _cursorX;
+    int _cursorY;
 };
 
-class InsertTextCommand : public ECCommand
-{
+class InsertTextCommand : public ECCommand {
 public:
-    InsertTextCommand(ECTextViewImp* TextViewImp, char ch)
-        : _controller(controller), _ch(ch) {}
+    InsertTextCommand(ECTextViewImp* TextViewImp, ECController* Controller, char ch);
     virtual void execute();
     virtual void unexecute();
 
 private:
     ECTextViewImp* _TextViewImp;
+    ECController* _Controller;
     char _ch;
 };
 
-class RemoveTextCommand : public ECCommand
-{
+class RemoveTextCommand : public ECCommand {
 public:
-    RemoveTextCommand(ECTextViewImp* TextViewImp)
-        :  _TextViewImp(TextViewImp) {}
+    RemoveTextCommand(ECTextViewImp* TextViewImp, ECController* Controller);
+
     virtual void execute();
     virtual void unexecute();
 
 private:
-    ECController* _controller;
+    ECTextViewImp* _TextViewImp;
+    ECController* _Controller;
+    char _removedChar;
 };
 
-class EnterCommand : public ECCommand
-{
+class EnterCommand : public ECCommand {
 public:
-    EnterCommand(ECController* controller)
-        : _controller(controller) {}
+    EnterCommand(ECTextViewImp* TextViewImp, ECController* Controller);
     virtual void execute();
     virtual void unexecute();
 
 private:
-    ECController* _controller;
+    ECTextViewImp* _TextViewImp;
+    ECController* _Controller;
+    string _remaining_text;
+    int _split_pos; 
+};
+
+
+class MergeLinesCommand : public ECCommand {
+public:
+    MergeLinesCommand(ECTextViewImp* TextViewImp, ECController* Controller);
+    virtual void execute();
+    virtual void unexecute();
+
+private:
+    ECTextViewImp* _TextViewImp;
+    ECController* _Controller;
 };
 
 #endif /* ECCOMMAND_H */

@@ -17,6 +17,7 @@ struct Operation {
     int x, y;
 };
 
+class ECCommand;
 
 class ECController
 {
@@ -43,6 +44,11 @@ public:
         return curStatus;
     }
 
+    vector<string>& GetRows() {return Rows;}
+
+    void UpdateTextViewImpRows();
+
+
 
 
 private:
@@ -55,13 +61,19 @@ private:
     stack<Operation> redoStack;
     std::vector<char> brackets = {'(', ')', '{', '}', '[', ']', '<', '>'};
 
-    void UpdateTextViewImpRows();
     set<string> keywords;
     void LoadKeywords();
     void HighlightKeywords();
     std::deque<string> UpRowDeque;
     std::deque<string> DownRowDeque;
-    
+
+    int current_y = _TextViewImp->GetCursorY(); 
+    int current_x = _TextViewImp->GetCursorX(); 
+
+    std::stack<ECCommand*> CommandStack;
+
+    std::stack<ECCommand*> RedoStack;
+
 
 };
 

@@ -10,13 +10,9 @@ public:
     ECModel(ECTextViewImp *TextViewImp, ECController *Controller);
 
     void Update();
-
-
-
 private:
     ECTextViewImp * _TextViewImp;
     ECController * _Controller;
-
 };
 
 #endif

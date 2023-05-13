@@ -7,6 +7,7 @@
 #include <sstream>
 #include <iostream>
 #include <regex>
+#include "ECCommand.h"
 using namespace std;
 
 ECController::ECController(ECTextViewImp *TextViewImp, const std::string &filename) : _TextViewImp(TextViewImp), _filename(filename)
@@ -14,6 +15,8 @@ ECController::ECController(ECTextViewImp *TextViewImp, const std::string &filena
     OpenFile();
     LoadKeywords();
     HighlightKeywords();
+    if (Rows.size() == 0)
+        Rows.push_back("");
 }
 
 void ECController::OpenFile()
@@ -54,26 +57,78 @@ void ECController::HandleKey(int key)
         int current_y = _TextViewImp->GetCursorY();
         int current_x = _TextViewImp->GetCursorX();
 
-        _TextViewImp->SetCursorX(max(current_x - 1, 0));
+        if (current_x > 0)
+        {
+            _TextViewImp->SetCursorX(current_x - 1);
+        }
+        else if (current_y > 0)
+        {
+            int prev_row_length = Rows[current_y - 1].length();
+            _TextViewImp->SetCursorY(current_y - 1);
+            _TextViewImp->SetCursorX(prev_row_length);
+        }
         break;
     }
 
     case ARROW_RIGHT:
     {
-        int row_length = Rows[_TextViewImp->GetCursorY()].length();
-        if (_TextViewImp->GetCursorX() < row_length)
+        int current_y = _TextViewImp->GetCursorY();
+        int current_x = _TextViewImp->GetCursorX();
+        int max_x = Rows[current_y].length();
+
+        if (current_x < max_x)
         {
-            _TextViewImp->SetCursorX(min(_TextViewImp->GetCursorX() + 1, row_length));
+            _TextViewImp->SetCursorX(current_x + 1);
         }
+        else if (current_y < Rows.size() - 1)
+        {
+            _TextViewImp->SetCursorY(current_y + 1);
+            _TextViewImp->SetCursorX(0);
+        }
+        break;
     }
-    break;
+
+    case ARROW_UP:
+    {
+        int current_y = _TextViewImp->GetCursorY();
+        int current_x = _TextViewImp->GetCursorX();
+        if (current_y > 0)
+        {
+            int prev_row_length = Rows[current_y - 1].length();
+            int new_x = min(current_x, prev_row_length);
+            _TextViewImp->SetCursorY(current_y - 1);
+            _TextViewImp->SetCursorX(new_x);
+        }
+        break;
+    }
+    case ARROW_DOWN:
+    {
+
+        int current_y = _TextViewImp->GetCursorY();
+        int current_x = _TextViewImp->GetCursorX();
+        int max_y = _TextViewImp->GetRowNumInView() - 1;
+
+        if (current_y == Rows.size() - 1)
+            break;
+
+        if (current_y < max_y)
+        {
+            int next_row_length = Rows[current_y + 1].length();
+            int new_x = min(current_x, next_row_length);
+
+            _TextViewImp->SetCursorY(current_y + 1);
+            _TextViewImp->SetCursorX(new_x);
+        }
+
+        break;
+    }
 
     case ESC:
     {
+        string tt = to_string(_TextViewImp->GetRowNumInView());
         curStatus = "command";
         _TextViewImp->ClearStatusRows();
-        _TextViewImp->AddStatusRow("ctrl-h for help", "mode: " + curStatus, true);
-
+        _TextViewImp->AddStatusRow("ctrl-h for help", "mode: " + tt, true);
         break;
     }
 
@@ -93,42 +148,6 @@ void ECController::HandleKey(int key)
 
         break;
     }
-    case ARROW_UP:
-    {
-        int current_x = _TextViewImp->GetCursorX();
-        int current_y = _TextViewImp->GetCursorY();
-        if (current_y > 0)
-        {
-            int prev_row_length = Rows[current_y - 1].length();
-            int new_x = min(current_x, prev_row_length);
-            _TextViewImp->SetCursorY(current_y - 1);
-            _TextViewImp->SetCursorX(new_x);
-        }
-        break;
-    }
-    case ARROW_DOWN:
-    {
-
-        int current_x = _TextViewImp->GetCursorX();
-        int current_y = _TextViewImp->GetCursorY();
-        int max_y = _TextViewImp->GetRowNumInView() - 1;
-
-        if (current_y == Rows.size() - 1)
-            break;
-
-        if (current_y < max_y)
-        {
-            int next_row_length = Rows[current_y + 1].length();
-            int new_x = min(current_x, next_row_length);
-            if (current_y != max_y)
-            {
-                _TextViewImp->SetCursorY(current_y + 1);
-            }
-            _TextViewImp->SetCursorX(new_x);
-        }
-
-        break;
-    }
 
     case CTRL_Q:
     {
@@ -142,14 +161,12 @@ void ECController::HandleKey(int key)
 
     case CTRL_Z:
     {
-        if (curStatus == "command")
-            Undo();
+        Undo();
         break;
     }
     case CTRL_Y:
     {
-        if (curStatus == "command")
-            Redo();
+        Redo();
         break;
     }
     }
@@ -158,169 +175,87 @@ void ECController::HandleKey(int key)
 }
 
 void ECController::AddText(char ch)
-{
-    int y = _TextViewImp->GetCursorY();
-    int x = _TextViewImp->GetCursorX();
-
-    if (y >= Rows.size())
-    {
-        Rows.resize(y + 1);
-    }
-
-    if (x >= _TextViewImp->GetColNumInView() - 1) // subtract 1 here to account for the new character being added
-    {
-        Rows[y].erase(0, 1);
-        Rows[y].push_back(ch);
-    }
-    else
-    {
-        Rows[y].insert(x, 1, ch);
-        _TextViewImp->SetCursorX(x + 1);
-    }
-
-    Operation op;
-    op.type = Operation::Type::ADD;
-    op.ch = ch;
-    op.x = x;
-    op.y = y;
-    undoStack.push(op);
-
-    _TextViewImp->Refresh();
-    UpdateTextViewImpRows();
+{   
+    if (curStatus == "command")
+        return;
+    ECCommand* command = new InsertTextCommand(_TextViewImp, this, ch);
+    command->execute();
+    CommandStack.push(command);
     HighlightKeywords();
-
-    if (ch == '[')
-    {
-        AddText(']');
-        _TextViewImp->SetCursorX(_TextViewImp->GetCursorX() - 1);
-    }
-    if (ch == '{')
-    {
-        AddText('}');
-        _TextViewImp->SetCursorX(_TextViewImp->GetCursorX() - 1);
-    }
-    if (ch == '(')
-    {
-        AddText(')');
-        _TextViewImp->SetCursorX(_TextViewImp->GetCursorX() - 1);
-    }
-
 }
 
 void ECController::RemoveText()
 {
+    if (curStatus == "command")
+        return;
     int y = _TextViewImp->GetCursorY();
     int x = _TextViewImp->GetCursorX();
+
 
     if (y >= Rows.size())
     {
         return;
     }
 
-    char removedChar = '\0'; // Initialize removedChar to null character
-
-    if (x == 0)
+    if (x > 0)
     {
-        if (y == 0)
-        {
-            return;
-        }
-        string &current_row = Rows[y];
-        int previous_row_length = Rows[y - 1].length();
-        removedChar = current_row[0];
-        Rows[y - 1] += current_row;
-        Rows.erase(Rows.begin() + y);
-        _TextViewImp->SetCursorY(y - 1);
-        _TextViewImp->SetCursorX(previous_row_length);
+        ECCommand* command = new RemoveTextCommand(_TextViewImp, this);
+        command->execute();
+        CommandStack.push(command);
     }
-
     else
     {
-        if (x > 0)
+        if (y > 0)
         {
-            removedChar = Rows[y][x - 1];
-            Rows[y].erase(x - 1, 1);
-            _TextViewImp->SetCursorX(x - 1);
+            ECCommand* command = new MergeLinesCommand(_TextViewImp, this);
+            command->execute();
+            CommandStack.push(command);
         }
-    }
-
-    // Push the operation onto the undo stack
-    if (removedChar != '\0')
-    {
-        Operation op;
-        op.type = Operation::Type::REMOVE;
-        op.ch = removedChar;
-        op.x = x;
-        op.y = y;
-        undoStack.push(op);
     }
 
     _TextViewImp->Refresh();
-    UpdateTextViewImpRows();
     HighlightKeywords();
 }
 
-void ECController::Undo()
-{
-    if (undoStack.empty())
-        return;
 
-    Operation op = undoStack.top();
-    undoStack.pop();
 
-    if (op.type == Operation::Type::ADD)
-    {
-        Rows[op.y].erase(op.x, 1);
-    }
-    else if (op.type == Operation::Type::REMOVE)
-    {
-        if (op.x == 0 && op.y > 0)
-        {
-            Rows[op.y - 1].erase(Rows[op.y - 1].size() - 1);
-            Rows.insert(Rows.begin() + op.y, string(1, op.ch));
-        }
-        else
-        {
-            Rows[op.y].insert(op.x - 1, 1, op.ch);
-        }
-    }
-
-    redoStack.push(op);
-
-    _TextViewImp->SetCursorY(op.y);
-    _TextViewImp->SetCursorX(op.x);
-    _TextViewImp->Refresh();
-    UpdateTextViewImpRows();
-}
 
 void ECController::HandleEnter()
 {
-    int current_x = _TextViewImp->GetCursorX();
-    int current_y = _TextViewImp->GetCursorY();
+    if (curStatus == "command")
+        return;
+    ECCommand* command = new EnterCommand(_TextViewImp, this);
+    command->execute();
+    CommandStack.push(command);
 
-    int max_y = _TextViewImp->GetRowNumInView() - 1;
-
-    if (current_y == Rows.size() - 1 || Rows.size() == 0)
-    {
-        Rows.resize(current_y + 1);
-    }
-
-    string remaining_text = Rows[current_y].substr(current_x);
-    Rows[current_y].erase(current_x, string::npos);
-
-    Rows.insert(Rows.begin() + current_y + 1, remaining_text);
-
-    if (Rows.size() > max_y + 1)
-    {                                    // If the total number of rows in view would exceed max_y after inserting the new row
-        DownRowDeque.push_back(Rows[0]); // Push the first row in the view to the deque
-        Rows.erase(Rows.begin());        // Remove the first row from the view
-    }
-
-    _TextViewImp->SetCursorY(current_y == max_y ? max_y : current_y + 1); // Move the cursor to the next line if possible, otherwise keep it at the same line
-    _TextViewImp->SetCursorX(0);
-    _TextViewImp->Refresh();
-    UpdateTextViewImpRows();
 }
+
+
+
+void ECController::Undo()
+{
+    if (CommandStack.empty())
+        return;
+
+    ECCommand* command = CommandStack.top();
+    CommandStack.pop();
+    command->unexecute();
+
+    RedoStack.push(command);
+}
+
+void ECController::Redo()
+{
+    if (RedoStack.empty())
+        return;
+
+    ECCommand* command = RedoStack.top();
+    RedoStack.pop();
+    command->execute();
+
+    CommandStack.push(command);
+}
+
 
 void ECController::UpdateTextViewImpRows()
 {
@@ -333,54 +268,21 @@ void ECController::UpdateTextViewImpRows()
     _TextViewImp->Refresh();
 }
 
-void ECController::Redo()
-{
-    if (redoStack.empty())
-        return;
-
-    Operation op = redoStack.top();
-    redoStack.pop();
-
-    if (op.type == Operation::Type::ADD)
-    {
-        Rows[op.y].insert(op.x, 1, op.ch);
-    }
-    else if (op.type == Operation::Type::REMOVE)
-    {
-        if (op.x == 0 && op.y > 0)
-        {
-            Rows[op.y - 1].push_back(Rows[op.y][0]);
-            Rows.erase(Rows.begin() + op.y);
-        }
-        else
-        {
-            Rows[op.y].erase(op.x - 1, 1);
-        }
-    }
-
-    undoStack.push(op);
-
-    _TextViewImp->SetCursorY(op.y);
-    _TextViewImp->SetCursorX(op.x);
-    _TextViewImp->Refresh();
-    UpdateTextViewImpRows();
-}
-
 void ECController::LoadKeywords()
 {
     ifstream file;
 
     if (_filename.substr(_filename.length() - 2) == "py")
     {
-        file.open("pykeywords.txt");
+        file.open("dependencies/pykeywords.txt");
     }
-    else if (_filename.substr(_filename.length() - 3) == "cpp")
+    else if (_filename.substr(_filename.length() - 3) == "cpp" || _filename.substr(_filename.length() - 1) == "c")
     {
-        file.open("cppkeywords.txt");
+        file.open("dependencies/cppkeywords.txt");
     }
-    else if (_filename.substr(_filename.length() - 1) == "c")
+    else if (_filename.substr(_filename.length() - 1) == "c" || _filename.substr(_filename.length() - 1) == "h")
     {
-        file.open("ckeywords.txt");
+        file.open("dependencies/ckeywords.txt");
     }
 
     if (file.is_open())
