@@ -54,17 +54,7 @@ void ECController::HandleKey(int key)
         int current_y = _TextViewImp->GetCursorY();
         int current_x = _TextViewImp->GetCursorX();
 
-        // if (current_x == 0 && current_y < tmpVector.size() && !tmpVector[current_y].empty())
-        // {
-        //     char ch = tmpVector[current_y].back();
-        //     tmpVector[current_y].pop_back();
-        //     Rows[current_y].insert(0, 1, ch);
-        //     _TextViewImp->SetCursorX(1);
-        // }
-        // else
-        // {
         _TextViewImp->SetCursorX(max(current_x - 1, 0));
-        // }
         break;
     }
 
@@ -82,7 +72,7 @@ void ECController::HandleKey(int key)
     {
         curStatus = "command";
         _TextViewImp->ClearStatusRows();
-        _TextViewImp->AddStatusRow("Editor current mode (ctrl s to save)", "command", true);
+        _TextViewImp->AddStatusRow("ctrl-h for help", "mode: " + curStatus, true);
 
         break;
     }
@@ -91,7 +81,7 @@ void ECController::HandleKey(int key)
     {
         curStatus = "command";
         _TextViewImp->ClearStatusRows();
-        _TextViewImp->AddStatusRow("Editor current mode (ctrl s to save)", "command", true);
+        _TextViewImp->AddStatusRow("ctrl-h for help", "mode: " + curStatus, true);
 
         break;
     }
@@ -99,7 +89,7 @@ void ECController::HandleKey(int key)
     {
         curStatus = "insert";
         _TextViewImp->ClearStatusRows();
-        _TextViewImp->AddStatusRow("Editor current mode (ctrl s to save)", "insert", true);
+        _TextViewImp->AddStatusRow("ctrl-h for help", "mode: " + curStatus, true);
 
         break;
     }
@@ -118,30 +108,23 @@ void ECController::HandleKey(int key)
     }
     case ARROW_DOWN:
     {
-        
+
         int current_x = _TextViewImp->GetCursorX();
         int current_y = _TextViewImp->GetCursorY();
         int max_y = _TextViewImp->GetRowNumInView() - 1;
-        
+
         if (current_y == Rows.size() - 1)
             break;
-        
+
         if (current_y < max_y)
         {
             int next_row_length = Rows[current_y + 1].length();
             int new_x = min(current_x, next_row_length);
-            if (current_y != max_y){
-            _TextViewImp->SetCursorY(current_y + 1);
+            if (current_y != max_y)
+            {
+                _TextViewImp->SetCursorY(current_y + 1);
             }
             _TextViewImp->SetCursorX(new_x);
-
-            
-        if (current_y >= _TextViewImp->GetRowNumInView())
-        {
-            int ErasedRow = current_y - _TextViewImp->GetRowNumInView();
-            DownRowDeque.push_back(Rows[ErasedRow]);
-            Rows.erase(Rows.begin() + ErasedRow);
-        }
         }
 
         break;
@@ -222,11 +205,6 @@ void ECController::AddText(char ch)
         _TextViewImp->SetCursorX(_TextViewImp->GetCursorX() - 1);
     }
 
-    if (ch == '<')
-    {
-        AddText('>');
-        _TextViewImp->SetCursorX(_TextViewImp->GetCursorX() - 1);
-    }
 }
 
 void ECController::RemoveText()
@@ -322,7 +300,7 @@ void ECController::HandleEnter()
 
     int max_y = _TextViewImp->GetRowNumInView() - 1;
 
-    if (current_y == Rows.size()- 1 || Rows.size() == 0)
+    if (current_y == Rows.size() - 1 || Rows.size() == 0)
     {
         Rows.resize(current_y + 1);
     }
@@ -332,9 +310,10 @@ void ECController::HandleEnter()
 
     Rows.insert(Rows.begin() + current_y + 1, remaining_text);
 
-    if (Rows.size() > max_y + 1) { // If the total number of rows in view would exceed max_y after inserting the new row
+    if (Rows.size() > max_y + 1)
+    {                                    // If the total number of rows in view would exceed max_y after inserting the new row
         DownRowDeque.push_back(Rows[0]); // Push the first row in the view to the deque
-        Rows.erase(Rows.begin()); // Remove the first row from the view
+        Rows.erase(Rows.begin());        // Remove the first row from the view
     }
 
     _TextViewImp->SetCursorY(current_y == max_y ? max_y : current_y + 1); // Move the cursor to the next line if possible, otherwise keep it at the same line
@@ -342,8 +321,6 @@ void ECController::HandleEnter()
     _TextViewImp->Refresh();
     UpdateTextViewImpRows();
 }
-
-
 
 void ECController::UpdateTextViewImpRows()
 {
@@ -451,7 +428,7 @@ void ECController::HighlightKeywords()
             {
                 if (row[i] == brackets[j])
                 {
-                    _TextViewImp->SetColor(rowNum, i, i + 1, TEXT_COLOR_RED);
+                    _TextViewImp->SetColor(rowNum, i, i, TEXT_COLOR_RED);
                 }
             }
         }

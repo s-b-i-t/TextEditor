@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
     ECModel model(&wndTest , &controller);
     
     wndTest.Attach(&model);
-    wndTest.AddStatusRow("Editor current mode(ctrl s to save)", controller.getCurStatus(), true);
+    wndTest.AddStatusRow("ctrl-h for help", "mode: " + controller.getCurStatus(), true);
     wndTest.Refresh();
     wndTest.Show();
     

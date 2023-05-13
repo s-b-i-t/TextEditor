@@ -43,6 +43,8 @@ public:
         return curStatus;
     }
 
+
+
 private:
     ECTextViewImp *_TextViewImp;
     vector<string> Rows;
@@ -59,6 +61,7 @@ private:
     void HighlightKeywords();
     std::deque<string> UpRowDeque;
     std::deque<string> DownRowDeque;
+    
 
 };
 
