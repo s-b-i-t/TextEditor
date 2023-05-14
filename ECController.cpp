@@ -308,22 +308,21 @@ void ECController::HighlightKeywords()
     int rowNum = 0;
     for (const auto &row : Rows)
     {
-        // Highlight keywords
         for (const auto &keyword : keywords)
         {
-            std::regex keyword_regex("\\b" + keyword + "\\b");
-            std::sregex_iterator it(row.begin(), row.end(), keyword_regex);
-            std::sregex_iterator reg_end;
-
-            for (; it != reg_end; ++it)
+            size_t start_pos = 0;
+            while((start_pos = row.find(keyword, start_pos)) != std::string::npos) 
             {
-                std::smatch match = *it;
-                size_t pos = match.position();
-                _TextViewImp->SetColor(rowNum, pos, pos + keyword.length(), TEXT_COLOR_BLUE);
+                size_t end_pos = start_pos + keyword.length();
+                if ((start_pos == 0 || !isalnum(row[start_pos - 1])) && 
+                    (end_pos == row.length() || !isalnum(row[end_pos])))
+                {
+                    _TextViewImp->SetColor(rowNum, start_pos, end_pos, TEXT_COLOR_BLUE);
+                }
+                start_pos += keyword.length(); 
             }
         }
 
-        // Highlight brackets
         for (int i = 0; i < row.size(); i++)
         {
             for (int j = 0; j < brackets.size(); ++j)

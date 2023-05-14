@@ -54,25 +54,31 @@ public:
 private:
     ECTextViewImp *_TextViewImp;
     vector<string> Rows;
-    vector<string> tmpVector;
+    
+    
     string _filename;
     std::string curStatus = "command";
+    
+    
     stack<Operation> undoStack;
     stack<Operation> redoStack;
+    
     std::vector<char> brackets = {'(', ')', '{', '}', '[', ']', '<', '>'};
 
     set<string> keywords;
     void LoadKeywords();
     void HighlightKeywords();
+    
     std::deque<string> UpRowDeque;
     std::deque<string> DownRowDeque;
 
-    int current_y = _TextViewImp->GetCursorY(); 
-    int current_x = _TextViewImp->GetCursorX(); 
-
+    
     std::stack<ECCommand*> CommandStack;
 
     std::stack<ECCommand*> RedoStack;
+
+    std::vector<int> horizontalOffsets;
+
 
 
 };
