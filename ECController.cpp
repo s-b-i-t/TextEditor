@@ -8,6 +8,7 @@
 #include <iostream>
 #include <regex>
 #include "ECCommand.h"
+#include <set>
 using namespace std;
 
 ECController::ECController(ECTextViewImp *TextViewImp, const std::string &filename) : _TextViewImp(TextViewImp), _filename(filename)
@@ -22,31 +23,79 @@ ECController::ECController(ECTextViewImp *TextViewImp, const std::string &filena
 void ECController::OpenFile()
 {
     ifstream file(_filename);
-
+    int max_y = _TextViewImp->GetRowNumInView() - 1;
     if (file.is_open())
     {
         string line;
+        int current_row = 0;
         while (getline(file, line))
         {
-            Rows.push_back(line);
-            _TextViewImp->Refresh();
+            if (current_row < max_y)
+            {
+                Rows.push_back(line);
+            }
+            else
+            {
+                // Use a stack to store overflow lines in reverse order
+                // so that the line immediately after the last line in Rows
+                // is at the top of Bottom_Rows.
+                Bottom_Rows.push(line);
+            }
+            current_row++;
         }
         file.close();
     }
-
+    // Reverse the order of lines in Bottom_Rows to match the original file order.
+    stack<string> temp;
+    while (!Bottom_Rows.empty())
+    {
+        temp.push(Bottom_Rows.top());
+        Bottom_Rows.pop();
+    }
+    Bottom_Rows = temp;
     UpdateTextViewImpRows();
 }
+
 
 void ECController::SaveFile()
 {
     ofstream file(_filename);
 
+    // write Top_Rows to the file in the correct order
+    stack<string> temp = Top_Rows;
+    vector<string> tempVec;
+    while (!temp.empty())
+    {
+        tempVec.push_back(temp.top());
+        temp.pop();
+    }
+    for (auto rit = tempVec.rbegin(); rit != tempVec.rend(); ++rit)
+    {
+        file << *rit << endl;
+    }
+
+    // write Rows to the file
     for (const auto &row : Rows)
     {
         file << row << endl;
     }
+
+    // write Bottom_Rows to the file in the correct order
+    temp = Bottom_Rows;
+    tempVec.clear();
+    while (!temp.empty())
+    {
+        tempVec.push_back(temp.top());
+        temp.pop();
+    }
+    for (auto rit = tempVec.rbegin(); rit != tempVec.rend(); ++rit)
+    {
+        file << *rit << endl;
+    }
+
     file.close();
 }
+
 
 void ECController::HandleKey(int key)
 {
@@ -99,6 +148,7 @@ void ECController::HandleKey(int key)
             _TextViewImp->SetCursorY(current_y - 1);
             _TextViewImp->SetCursorX(new_x);
         }
+        HandleWrapUp();
         break;
     }
     case ARROW_DOWN:
@@ -108,17 +158,15 @@ void ECController::HandleKey(int key)
         int current_x = _TextViewImp->GetCursorX();
         int max_y = _TextViewImp->GetRowNumInView() - 1;
 
-        if (current_y == Rows.size() - 1)
-            break;
-
         if (current_y < max_y)
         {
             int next_row_length = Rows[current_y + 1].length();
             int new_x = min(current_x, next_row_length);
 
-            _TextViewImp->SetCursorY(current_y + 1);
+            _TextViewImp->SetCursorY(min(max_y, current_y + 1));
             _TextViewImp->SetCursorX(new_x);
         }
+        HandleWrapDown();
 
         break;
     }
@@ -157,6 +205,7 @@ void ECController::HandleKey(int key)
     case CTRL_S:
     {
         SaveFile();
+        break;
     }
 
     case CTRL_Z:
@@ -170,15 +219,14 @@ void ECController::HandleKey(int key)
         break;
     }
     }
-
     _TextViewImp->Refresh();
 }
 
 void ECController::AddText(char ch)
-{   
+{
     if (curStatus == "command")
         return;
-    ECCommand* command = new InsertTextCommand(_TextViewImp, this, ch);
+    ECCommand *command = new InsertTextCommand(_TextViewImp, this, ch);
     command->execute();
     CommandStack.push(command);
     HighlightKeywords();
@@ -191,7 +239,6 @@ void ECController::RemoveText()
     int y = _TextViewImp->GetCursorY();
     int x = _TextViewImp->GetCursorX();
 
-
     if (y >= Rows.size())
     {
         return;
@@ -199,7 +246,7 @@ void ECController::RemoveText()
 
     if (x > 0)
     {
-        ECCommand* command = new RemoveTextCommand(_TextViewImp, this);
+        ECCommand *command = new RemoveTextCommand(_TextViewImp, this);
         command->execute();
         CommandStack.push(command);
     }
@@ -207,37 +254,36 @@ void ECController::RemoveText()
     {
         if (y > 0)
         {
-            ECCommand* command = new MergeLinesCommand(_TextViewImp, this);
+            ECCommand *command = new MergeLinesCommand(_TextViewImp, this);
             command->execute();
             CommandStack.push(command);
         }
     }
 
-    _TextViewImp->Refresh();
+    HandleWrapUp();
     HighlightKeywords();
 }
-
-
-
 
 void ECController::HandleEnter()
 {
     if (curStatus == "command")
         return;
-    ECCommand* command = new EnterCommand(_TextViewImp, this);
+    ECCommand *command = new EnterCommand(_TextViewImp, this);
     command->execute();
     CommandStack.push(command);
+    HandleWrapDown();
 
+    string tt = to_string(Bottom_Rows.size());
+    _TextViewImp->ClearStatusRows();
+    _TextViewImp->AddStatusRow("ctrl-h for help", "mode: " + tt, true);
 }
-
-
 
 void ECController::Undo()
 {
     if (CommandStack.empty())
         return;
 
-    ECCommand* command = CommandStack.top();
+    ECCommand *command = CommandStack.top();
     CommandStack.pop();
     command->unexecute();
 
@@ -249,23 +295,11 @@ void ECController::Redo()
     if (RedoStack.empty())
         return;
 
-    ECCommand* command = RedoStack.top();
+    ECCommand *command = RedoStack.top();
     RedoStack.pop();
     command->execute();
 
     CommandStack.push(command);
-}
-
-
-void ECController::UpdateTextViewImpRows()
-{
-    _TextViewImp->InitRows();
-    for (const auto &row : Rows)
-    {
-        _TextViewImp->AddRow(row);
-    }
-    HighlightKeywords();
-    _TextViewImp->Refresh();
 }
 
 void ECController::LoadKeywords()
@@ -311,15 +345,15 @@ void ECController::HighlightKeywords()
         for (const auto &keyword : keywords)
         {
             size_t start_pos = 0;
-            while((start_pos = row.find(keyword, start_pos)) != std::string::npos) 
+            while ((start_pos = row.find(keyword, start_pos)) != std::string::npos)
             {
                 size_t end_pos = start_pos + keyword.length();
-                if ((start_pos == 0 || !isalnum(row[start_pos - 1])) && 
+                if ((start_pos == 0 || !isalnum(row[start_pos - 1])) &&
                     (end_pos == row.length() || !isalnum(row[end_pos])))
                 {
                     _TextViewImp->SetColor(rowNum, start_pos, end_pos, TEXT_COLOR_BLUE);
                 }
-                start_pos += keyword.length(); 
+                start_pos += keyword.length();
             }
         }
 
@@ -336,5 +370,51 @@ void ECController::HighlightKeywords()
 
         rowNum++;
     }
+    _TextViewImp->Refresh();
+}
+
+void ECController::HandleWrapDown()
+{
+    int current_y = _TextViewImp->GetCursorY();
+    int max_y = _TextViewImp->GetRowNumInView() - 1;
+    if (current_y >= max_y && !Bottom_Rows.empty())
+    {
+        Top_Rows.push(Rows[0]);
+        Rows.erase(Rows.begin());
+        Rows.push_back(Bottom_Rows.top());
+        Bottom_Rows.pop();
+        UpdateTextViewImpRows();
+    }
+}
+
+void ECController::HandleWrapUp()
+{
+    int current_y = _TextViewImp->GetCursorY();
+    if (current_y == 0 && !Top_Rows.empty())
+    {
+        Bottom_Rows.push(Rows[Rows.size() - 1]);
+        Rows.pop_back();
+        Rows.insert(Rows.begin(), Top_Rows.top());
+        Top_Rows.pop();
+        UpdateTextViewImpRows();
+    }
+}
+
+void ECController :: HandleWrapRight(){
+    ;
+}
+
+void ECController :: HandleWrapLeft(){
+    ;
+}
+
+void ECController::UpdateTextViewImpRows()
+{
+    _TextViewImp->InitRows();
+    for (const auto &row : Rows)
+    {
+        _TextViewImp->AddRow(row);
+    }
+    HighlightKeywords();
     _TextViewImp->Refresh();
 }

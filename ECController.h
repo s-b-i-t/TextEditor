@@ -10,24 +10,25 @@
 #include <set>
 using namespace std;
 
-
-struct Operation {
-    enum Type { ADD, REMOVE, ENTER } type;
-    char ch;
-    int x, y;
-};
-
 class ECCommand;
 
 class ECController
 {
 public:
     ECController(ECTextViewImp *TextViewImp, const std::string &filename);
+    
+    //Handles Misc keypresses
     void HandleKey(int key);
 
+    //Add text using command class
     void AddText(char ch);
-
+    
+    //Remove text using command class
     void RemoveText();
+
+    //Handle enter using command class
+    void HandleEnter();
+
 
     void OpenFile();
 
@@ -35,7 +36,6 @@ public:
 
     void Redo();
 
-    void HandleEnter();
     
     void Undo();
 
@@ -46,22 +46,28 @@ public:
 
     vector<string>& GetRows() {return Rows;}
 
+    //TextViewImp refreshed after any modification
     void UpdateTextViewImpRows();
 
-
-
+    //Get rows out of view
+    std::stack<string>& Get_Top_Rows(){return Top_Rows;}
+    std::stack<string>& Get_Bottom_Rows(){return Bottom_Rows;}
 
 private:
     ECTextViewImp *_TextViewImp;
     vector<string> Rows;
-    
-    
+
+    std::stack<string> Top_Rows;
+    std::stack<string> Bottom_Rows;
+
+    void HandleWrapDown();
+    void HandleWrapUp();
+    void HandleWrapRight();
+    void HandleWrapLeft();    
+
+
     string _filename;
     std::string curStatus = "command";
-    
-    
-    stack<Operation> undoStack;
-    stack<Operation> redoStack;
     
     std::vector<char> brackets = {'(', ')', '{', '}', '[', ']', '<', '>'};
 
@@ -69,18 +75,10 @@ private:
     void LoadKeywords();
     void HighlightKeywords();
     
-    std::deque<string> UpRowDeque;
-    std::deque<string> DownRowDeque;
-
-    
     std::stack<ECCommand*> CommandStack;
-
     std::stack<ECCommand*> RedoStack;
-
-    std::vector<int> horizontalOffsets;
-
-
 
 };
 
 #endif
+//first teasdkadsk

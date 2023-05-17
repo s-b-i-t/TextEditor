@@ -1,9 +1,10 @@
 #include "ECCommand.h"
 #include "ECController.h"
 #include <string>
+#include <stack>
 using namespace std;
 
-InsertTextCommand::InsertTextCommand(ECTextViewImp *TextViewImp, ECController *Controller, char ch): _TextViewImp(TextViewImp), _ch(ch), _Controller(Controller)
+InsertTextCommand::InsertTextCommand(ECTextViewImp *TextViewImp, ECController *Controller, char ch) : _TextViewImp(TextViewImp), _ch(ch), _Controller(Controller)
 {
     _cursorX = _TextViewImp->GetCursorX();
     _cursorY = _TextViewImp->GetCursorY();
@@ -61,24 +62,39 @@ EnterCommand::EnterCommand(ECTextViewImp *TextViewImp, ECController *Controller)
 void EnterCommand::execute()
 {
     _split_pos = _cursorX;
-
+    _removedFromTop = false;
+    int max_y = _TextViewImp->GetRowNumInView() - 1;
     _remaining_text = _Controller->GetRows()[_cursorY].substr(_split_pos);
     _Controller->GetRows()[_cursorY].erase(_split_pos, string::npos);
     _Controller->GetRows().insert(_Controller->GetRows().begin() + _cursorY + 1, _remaining_text);
+    if (_Controller->GetRows().size() > _TextViewImp->GetRowNumInView())
+    {
+        _removedRow = _Controller->GetRows()[0];
+        _Controller->Get_Top_Rows().push(_Controller->GetRows()[0]);
+        _Controller->GetRows().erase(_Controller->GetRows().begin());
+        _removedFromTop = true;
+    }
 
-    _TextViewImp->SetCursorY(_cursorY + 1);
+    if (_cursorY < max_y)
+        _TextViewImp->SetCursorY(_cursorY + 1);
     _TextViewImp->SetCursorX(0);
     _Controller->UpdateTextViewImpRows();
 }
 
 void EnterCommand::unexecute()
 {
+    if (_removedFromTop)
+    {
+        _Controller->GetRows().insert(_Controller->GetRows().begin(), _removedRow);
+        _Controller->Get_Top_Rows().pop();
+    }
     _TextViewImp->SetCursorY(_cursorY);
     _TextViewImp->SetCursorX(_split_pos);
     _Controller->GetRows()[_cursorY].append(_Controller->GetRows()[_cursorY + 1]);
     _Controller->GetRows().erase(_Controller->GetRows().begin() + _cursorY + 1);
     _Controller->UpdateTextViewImpRows();
 }
+
 
 MergeLinesCommand::MergeLinesCommand(ECTextViewImp *TextViewImp, ECController *Controller)
     : _TextViewImp(TextViewImp), _Controller(Controller)

@@ -54,6 +54,9 @@ private:
     ECController* _Controller;
     string _remaining_text;
     int _split_pos; 
+    bool _removedFromTop = false;
+    string _removedRow; 
+
 };
 
 
