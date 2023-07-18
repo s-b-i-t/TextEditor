@@ -9,6 +9,7 @@
 #include <regex>
 #include "ECCommand.h"
 #include <set>
+#include <sstream>
 using namespace std;
 
 ECController::ECController(ECTextViewImp *TextViewImp, const std::string &filename) : _TextViewImp(TextViewImp), _filename(filename)
@@ -18,6 +19,16 @@ ECController::ECController(ECTextViewImp *TextViewImp, const std::string &filena
     HighlightKeywords();
     if (Rows.size() == 0)
         Rows.push_back("");
+
+    UpdateStatusRow("");
+}
+
+// debugging purposes
+void ECController::UpdateStatusRow(string text)
+{
+    _TextViewImp->ClearStatusRows();
+
+    _TextViewImp->AddStatusRow("", text, true);
 }
 
 void ECController::OpenFile()
@@ -55,7 +66,6 @@ void ECController::OpenFile()
     Bottom_Rows = temp;
     UpdateTextViewImpRows();
 }
-
 
 void ECController::SaveFile()
 {
@@ -96,7 +106,6 @@ void ECController::SaveFile()
     file.close();
 }
 
-
 void ECController::HandleKey(int key)
 {
     switch (key)
@@ -105,6 +114,10 @@ void ECController::HandleKey(int key)
     {
         int current_y = _TextViewImp->GetCursorY();
         int current_x = _TextViewImp->GetCursorX();
+        int max_x = Rows[current_y].length();
+        int max_y = _TextViewImp->GetRowNumInView() - 1;
+        int new_x = NULL;
+        int new_y = NULL; //potenital bug?
 
         if (current_x > 0)
         {
@@ -116,6 +129,11 @@ void ECController::HandleKey(int key)
             _TextViewImp->SetCursorY(current_y - 1);
             _TextViewImp->SetCursorX(prev_row_length);
         }
+        std::ostringstream text;
+        text << "key: " << "left " << " old pos:(" << to_string(current_x) << 
+        "," << to_string(current_y) <<")" << " new pos:(" << to_string(new_x) << "," << to_string(new_y) <<
+         " ) max pos: (" << to_string(max_x) <<","<< to_string(max_y) <<")"; 
+        UpdateStatusRow(text.str());
         break;
     }
 
@@ -124,16 +142,30 @@ void ECController::HandleKey(int key)
         int current_y = _TextViewImp->GetCursorY();
         int current_x = _TextViewImp->GetCursorX();
         int max_x = Rows[current_y].length();
+        int max_y = _TextViewImp->GetRowNumInView() - 1;
+        int new_x = NULL;
+        int new_y = NULL; //potenital bug?
 
         if (current_x < max_x)
         {
-            _TextViewImp->SetCursorX(current_x + 1);
+            new_x = current_x + 1;
+            
         }
         else if (current_y < Rows.size() - 1)
         {
-            _TextViewImp->SetCursorY(current_y + 1);
-            _TextViewImp->SetCursorX(0);
+            new_y =current_y + 1;
+            _TextViewImp->SetCursorY(new_y);
+            new_x = 0;
         }
+
+            _TextViewImp->SetCursorX(new_x);
+
+
+        std::ostringstream text;
+        text << "key: " << "right " << " old pos:(" << to_string(current_x) << 
+        "," << to_string(current_y) <<")" << " new pos:(" << to_string(new_x) << "," << to_string(new_y) <<
+         " ) max pos: (" << to_string(max_x) <<","<< to_string(max_y) <<")"; 
+        UpdateStatusRow(text.str());
         break;
     }
 
@@ -141,6 +173,10 @@ void ECController::HandleKey(int key)
     {
         int current_y = _TextViewImp->GetCursorY();
         int current_x = _TextViewImp->GetCursorX();
+        int max_x = Rows[current_y].length();
+        int max_y = _TextViewImp->GetRowNumInView() - 1;
+        int new_x = NULL;
+        int new_y = NULL; //potenital bug?
         if (current_y > 0)
         {
             int prev_row_length = Rows[current_y - 1].length();
@@ -149,16 +185,28 @@ void ECController::HandleKey(int key)
             _TextViewImp->SetCursorX(new_x);
         }
         HandleWrapUp();
+
+
+        std::ostringstream text;
+        text << "key: " << "up " << " old pos:(" << to_string(current_x) << 
+        "," << to_string(current_y) <<")" << " new pos:(" << to_string(new_x) << "," << to_string(new_y) <<
+         " ) max pos: (" << to_string(max_x) <<","<< to_string(max_y) <<")"; 
+        UpdateStatusRow(text.str());
         break;
     }
     case ARROW_DOWN:
     {
-
         int current_y = _TextViewImp->GetCursorY();
         int current_x = _TextViewImp->GetCursorX();
+        int max_x = Rows[current_y].length();
         int max_y = _TextViewImp->GetRowNumInView() - 1;
+        int new_x = NULL;
+        int new_y = NULL; //potenital bug?
 
-        if (current_y < max_y)
+
+
+        
+        if (current_y <= max_y)
         {
             int next_row_length = Rows[current_y + 1].length();
             int new_x = min(current_x, next_row_length);
@@ -168,15 +216,36 @@ void ECController::HandleKey(int key)
         }
         HandleWrapDown();
 
+        std::ostringstream text;
+        text << "key: " << "down " << " old pos:(" << to_string(current_x) << 
+        "," << to_string(current_y) <<")" << " new pos:(" << to_string(new_x) << "," << to_string(new_y) << 
+        " ) max pos: (" << to_string(max_x) <<","<< to_string(max_y) <<")"; 
+        UpdateStatusRow(text.str());
+
         break;
     }
 
     case ESC:
     {
+
+        int current_y = _TextViewImp->GetCursorY();
+        int current_x = _TextViewImp->GetCursorX();
+        int max_x = Rows[current_y].length();
+        int max_y = _TextViewImp->GetRowNumInView() - 1;
+        int new_x = NULL;
+        int new_y = NULL; //potenital bug?
+
+
         string tt = to_string(_TextViewImp->GetRowNumInView());
         curStatus = "command";
         _TextViewImp->ClearStatusRows();
         _TextViewImp->AddStatusRow("ctrl-h for help", "mode: " + tt, true);
+        
+        std::ostringstream text;
+        text << "key: " << "esc " << " old pos:(" << to_string(current_x) << 
+        "," << to_string(current_y) <<")" << " new pos:(" << to_string(new_x) << "," << to_string(new_y) <<
+        " ) max pos: (" << to_string(max_x) <<","<< to_string(max_y) <<")"; 
+        UpdateStatusRow(text.str());        
         break;
     }
 
@@ -224,12 +293,28 @@ void ECController::HandleKey(int key)
 
 void ECController::AddText(char ch)
 {
-    if (curStatus == "command")
-        return;
+            int current_y = _TextViewImp->GetCursorY();
+        int current_x = _TextViewImp->GetCursorX();
+        int max_x = Rows[current_y].length();
+        int max_y = _TextViewImp->GetRowNumInView() - 1;
+        
+
     ECCommand *command = new InsertTextCommand(_TextViewImp, this, ch);
     command->execute();
     CommandStack.push(command);
     HighlightKeywords();
+
+
+    int new_x = NULL;
+    int new_y = NULL; //potenital bug?
+
+
+
+    std::ostringstream text;
+    text << "key: " << "right " << " old pos:(" << to_string(current_x) << 
+    "," << to_string(current_y) <<")" << " new pos:(" << to_string(new_x) << "," << to_string(new_y) <<
+    " ) max pos: (" << to_string(max_x) <<","<< to_string(max_y) <<")"; 
+    UpdateStatusRow(text.str());
 }
 
 void ECController::RemoveText()
@@ -268,15 +353,27 @@ void ECController::HandleEnter()
 {
     if (curStatus == "command")
         return;
+
+        int current_x = _TextViewImp->GetCursorX();
+        int current_y = _TextViewImp->GetCursorY();
+        int max_x = _TextViewImp->GetRowNumInView() - 1;
+        int max_y = _TextViewImp->GetRowNumInView() - 1;
+        int new_x = NULL;
+        int new_y = NULL; //potenital bug?
+        int rows_size = Rows[current_y].length();
+        
+    
     ECCommand *command = new EnterCommand(_TextViewImp, this);
     command->execute();
     CommandStack.push(command);
     HandleWrapDown();
 
-    string tt = to_string(Bottom_Rows.size());
-    _TextViewImp->ClearStatusRows();
-    _TextViewImp->AddStatusRow("ctrl-h for help", "mode: " + tt, true);
-}
+    
+    std::ostringstream text;
+    text << "key: " << "enter " << " old pos:(" << to_string(current_x) << 
+    "," << to_string(current_y) <<")" << " new pos:(" << to_string(new_x) << "," << to_string(new_y) <<
+    " ) max pos: (" << to_string(max_x) <<","<< to_string(max_y) <<")"; 
+    UpdateStatusRow(text.str());}
 
 void ECController::Undo()
 {
@@ -377,7 +474,7 @@ void ECController::HandleWrapDown()
 {
     int current_y = _TextViewImp->GetCursorY();
     int max_y = _TextViewImp->GetRowNumInView() - 1;
-    if (current_y >= max_y && !Bottom_Rows.empty())
+    if (current_y == max_y && !Bottom_Rows.empty())
     {
         Top_Rows.push(Rows[0]);
         Rows.erase(Rows.begin());
@@ -400,11 +497,13 @@ void ECController::HandleWrapUp()
     }
 }
 
-void ECController :: HandleWrapRight(){
+void ECController ::HandleWrapRight()
+{
     ;
 }
 
-void ECController :: HandleWrapLeft(){
+void ECController ::HandleWrapLeft()
+{
     ;
 }
 

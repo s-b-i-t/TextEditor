@@ -5,6 +5,7 @@
 #include <string>
 #include "ECTextViewImp.h"
 using namespace std;
+
 class ECController;
 
 class ECCommand {
@@ -18,6 +19,8 @@ protected:
     int _cursorY;
 };
 
+
+
 class InsertTextCommand : public ECCommand {
 public:
     InsertTextCommand(ECTextViewImp* TextViewImp, ECController* Controller, char ch);
@@ -29,6 +32,8 @@ private:
     ECController* _Controller;
     char _ch;
 };
+
+
 
 class RemoveTextCommand : public ECCommand {
 public:
@@ -42,6 +47,8 @@ private:
     ECController* _Controller;
     char _removedChar;
 };
+
+
 
 class EnterCommand : public ECCommand {
 public:
@@ -58,6 +65,8 @@ private:
     string _removedRow; 
 
 };
+
+
 
 
 class MergeLinesCommand : public ECCommand {

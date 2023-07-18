@@ -1,10 +1,4 @@
-//
 //  ECTextViewImp.cpp
-//  
-//
-//  Created by Yufeng Wu on 2/27/2020.
-//  Last modified: 4/9/2021
-//
 
 #include "ECTextViewImp.h"
 #include <termios.h>

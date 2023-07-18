@@ -6,20 +6,20 @@
 
 int main(int argc, char *argv[])
 {
-    ECTextViewImp wndTest;
 
     if (argc < 2) {
         cerr << "Please provide a filename" << endl;
         return 1;
     }
 
-    ECController controller(&wndTest, argv[1]);
-    ECModel model(&wndTest , &controller);
+    ECTextViewImp View;
+    ECController Controller(&View, argv[1]);
+    ECModel Model(&View, &Controller);
     
-    wndTest.Attach(&model);
-    wndTest.AddStatusRow("ctrl-h for help", "mode: " + controller.getCurStatus(), true);
-    wndTest.Refresh();
-    wndTest.Show();
+    View.Attach(&Model);
+    // View.AddStatusRow("ctrl-h for help", "mode: " + controller.getCurStatus(), true);
+    View.Refresh();
+    View.Show();
     
     return 0;
 }
