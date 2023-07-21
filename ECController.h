@@ -21,7 +21,7 @@ public:
     //Handle Misc keypresses
     void HandleKey(int key);
 
-    //Handle event by creating ECommand object then add to command stack for undo/redo
+    //Handle event by creating ECommand object
     void AddText(char ch);
     void RemoveText();
     void HandleEnter();
@@ -47,8 +47,6 @@ public:
 
     //TextViewImp refreshed after any modification
     void UpdateTextViewImpRows();
-
-    
 
 private:
     //debugging
@@ -86,4 +84,3 @@ private:
 };
 
 #endif
-//first teasdkadsk

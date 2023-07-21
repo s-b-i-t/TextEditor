@@ -119,17 +119,23 @@ void ECController::HandleKey(int key)
         int new_x = _TextViewImp->GetCursorX();
         int new_y = _TextViewImp->GetCursorY();
 
-
+        if (current_x == 0)
+            HandleWrapUp();
         if (current_x > 0)
         {
-            _TextViewImp->SetCursorX(current_x - 1);
+            new_x = current_x - 1;
         }
         else if (current_y > 0)
         {
             int prev_row_length = Rows[current_y - 1].length();
-            _TextViewImp->SetCursorY(current_y - 1);
-            _TextViewImp->SetCursorX(prev_row_length);
+            new_y = current_y - 1;
+            new_x = prev_row_length;
         }
+
+        _TextViewImp->SetCursorX(new_x);
+        _TextViewImp->SetCursorY(new_y);
+
+
         std::ostringstream text;
         text << "key: "
              << "left "
@@ -163,12 +169,8 @@ void ECController::HandleKey(int key)
             new_x = 0;
         }
 
-
         _TextViewImp->SetCursorX(new_x);
         _TextViewImp->SetCursorY(new_y);
-
-
-
 
         std::ostringstream text;
         text << "key: "
@@ -195,7 +197,8 @@ void ECController::HandleKey(int key)
         {
             int prev_row_length = Rows[current_y - 1].length();
             int new_x = min(current_x, prev_row_length);
-            _TextViewImp->SetCursorY(current_y - 1);
+            new_y = current_y - 1;
+            _TextViewImp->SetCursorY(new_y);
             _TextViewImp->SetCursorX(new_x);
         }
 
@@ -224,7 +227,8 @@ void ECController::HandleKey(int key)
             int next_row_length = Rows[current_y + 1].length();
             new_x = min(current_x, next_row_length);
 
-            _TextViewImp->SetCursorY(min(max_y, current_y + 1));
+            new_y = min(max_y, current_y + 1);
+            _TextViewImp->SetCursorY(new_y);
             _TextViewImp->SetCursorX(new_x);
         }
 
@@ -368,8 +372,7 @@ void ECController::HandleEnter()
     int current_y = _TextViewImp->GetCursorY();
     int max_x = _TextViewImp->GetRowNumInView() - 1;
     int max_y = _TextViewImp->GetRowNumInView() - 1;
-    int new_x = _TextViewImp->GetCursorX();
-    int new_y = _TextViewImp->GetCursorY();
+
     int rows_size = Rows[current_y].length();
 
     ECCommand *command = new EnterCommand(_TextViewImp, this);
@@ -377,8 +380,9 @@ void ECController::HandleEnter()
     CommandStack.push(command);
 
     if (current_y == max_y)
-        HandleWrapDown();
-
+        HandleWrapUp();
+    int new_x = _TextViewImp->GetCursorX();
+    int new_y = _TextViewImp->GetCursorY();
 
     std::ostringstream text;
     text << "key: "
