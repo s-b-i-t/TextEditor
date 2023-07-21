@@ -241,7 +241,8 @@ void ECTextViewImp :: FinishRowsBuffer()
     // fill out the window
     for(int r=GetNumRows(); r<status.GetWndRowNum(); ++r)
     {
-        bufferWnd += "~\x1b[0K\r\n";
+        //modified ~
+        bufferWnd += "\x1b[0K\r\n";
     }
     
     // show status

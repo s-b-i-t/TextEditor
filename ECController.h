@@ -47,6 +47,7 @@ public:
 
     //TextViewImp refreshed after any modification
     void UpdateTextViewImpRows();
+    
 
 private:
     //debugging

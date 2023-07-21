@@ -524,12 +524,18 @@ void ECController ::HandleWrapLeft()
     ;
 }
 
+#include <iomanip>  // include this at the top of your file
+
 void ECController::UpdateTextViewImpRows()
 {
     _TextViewImp->InitRows();
+    int lineNumber = Top_Rows.size();
     for (const auto &row : Rows)
     {
-        _TextViewImp->AddRow(row);
+        lineNumber++;
+        std::ostringstream oss;
+        oss << std::setw(3) << std::setfill(' ') << lineNumber << "  " << row;
+        _TextViewImp->AddRow(oss.str());
     }
     HighlightKeywords();
     _TextViewImp->Refresh();
