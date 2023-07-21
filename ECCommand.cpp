@@ -66,13 +66,58 @@ EnterCommand::EnterCommand(ECTextViewImp *TextViewImp, ECController *Controller)
 
 void EnterCommand::execute()
 {
-        _split_pos = _cursorX;
-        _removedFromTop = false;
-        
+    _split_pos = _cursorX;
+    _removedFromTop = false;
+    _removedFromBottom = false;
+    int max_y = _TextViewImp->GetRowNumInView() - 1;
+
+    //break row from cursor position onwards and make it
+    _remaining_text = _Controller->GetRows()[_cursorY].substr(_split_pos);
+    _Controller->GetRows()[_cursorY].erase(_split_pos, string::npos);
+    _Controller->GetRows().insert(_Controller->GetRows().begin() + _cursorY + 1, _remaining_text);
+
+    if (_Controller->GetRows().size() > _TextViewImp->GetRowNumInView())
+    {
+        if (_cursorY < max_y)
+        {
+            _removedRow = _Controller->GetRows().back();
+            _Controller->Get_Bottom_Rows().push(_removedRow);
+            _Controller->GetRows().pop_back();
+            _removedFromBottom = true;
+        }
+        else
+        {
+            _removedRow = _Controller->GetRows().front();
+            _Controller->Get_Top_Rows().push(_Controller->GetRows().front());
+            _Controller->GetRows().erase(_Controller->GetRows().begin());
+            _removedFromTop = true;
+        }
+    }
+
+    if (_cursorY < max_y)
+        _TextViewImp->SetCursorY(_cursorY + 1);
+    _TextViewImp->SetCursorX(0);
+    _Controller->UpdateTextViewImpRows();
 }
 
 void EnterCommand::unexecute()
 {
+    if (_removedFromTop)
+    {
+        _Controller->GetRows().insert(_Controller->GetRows().begin(), _removedRow);
+        _Controller->Get_Top_Rows().pop();
+    }
+    else if (_removedFromBottom)
+    {
+        _Controller->GetRows().push_back(_removedRow);
+        _Controller->Get_Bottom_Rows().pop();
+    }
+
+    _TextViewImp->SetCursorY(_cursorY);
+    _TextViewImp->SetCursorX(_split_pos);
+    _Controller->GetRows()[_cursorY].append(_Controller->GetRows()[_cursorY + 1]);
+    _Controller->GetRows().erase(_Controller->GetRows().begin() + _cursorY + 1);
+    _Controller->UpdateTextViewImpRows();
 }
 
 

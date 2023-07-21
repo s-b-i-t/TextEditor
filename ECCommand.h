@@ -62,6 +62,8 @@ private:
     string _remaining_text;
     int _split_pos; 
     bool _removedFromTop = false;
+    bool _removedFromBottom = false;
+
     string _removedRow; 
 
 };

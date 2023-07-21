@@ -116,8 +116,9 @@ void ECController::HandleKey(int key)
         int current_x = _TextViewImp->GetCursorX();
         int max_x = Rows[current_y].length();
         int max_y = _TextViewImp->GetRowNumInView() - 1;
-        int new_x = NULL;
-        int new_y = NULL; //potenital bug?
+        int new_x = _TextViewImp->GetCursorX();
+        int new_y = _TextViewImp->GetCursorY();
+
 
         if (current_x > 0)
         {
@@ -130,9 +131,10 @@ void ECController::HandleKey(int key)
             _TextViewImp->SetCursorX(prev_row_length);
         }
         std::ostringstream text;
-        text << "key: " << "left " << " old pos:(" << to_string(current_x) << 
-        "," << to_string(current_y) <<")" << " new pos:(" << to_string(new_x) << "," << to_string(new_y) <<
-         " ) max pos: (" << to_string(max_x) <<","<< to_string(max_y) <<")"; 
+        text << "key: "
+             << "left "
+             << " old pos:(" << to_string(current_x) << "," << to_string(current_y) << ")"
+             << " new pos:(" << to_string(new_x) << "," << to_string(new_y) << ") max pos: (" << to_string(max_x) << "," << to_string(max_y) << ")";
         UpdateStatusRow(text.str());
         break;
     }
@@ -143,28 +145,36 @@ void ECController::HandleKey(int key)
         int current_x = _TextViewImp->GetCursorX();
         int max_x = Rows[current_y].length();
         int max_y = _TextViewImp->GetRowNumInView() - 1;
-        int new_x = NULL;
-        int new_y = NULL; //potenital bug?
+        int new_x = _TextViewImp->GetCursorX();
+        int new_y = _TextViewImp->GetCursorY();
 
         if (current_x < max_x)
         {
             new_x = current_x + 1;
-            
         }
-        else if (current_y < Rows.size() - 1)
+        else if (current_y < max_y)
         {
-            new_y =current_y + 1;
-            _TextViewImp->SetCursorY(new_y);
+            new_y = current_y + 1;
+            new_x = 0;
+        }
+        else if (current_y == max_y && current_x == max_x && !Bottom_Rows.empty())
+        {
+            HandleWrapDown();
             new_x = 0;
         }
 
-            _TextViewImp->SetCursorX(new_x);
+
+        _TextViewImp->SetCursorX(new_x);
+        _TextViewImp->SetCursorY(new_y);
+
+
 
 
         std::ostringstream text;
-        text << "key: " << "right " << " old pos:(" << to_string(current_x) << 
-        "," << to_string(current_y) <<")" << " new pos:(" << to_string(new_x) << "," << to_string(new_y) <<
-         " ) max pos: (" << to_string(max_x) <<","<< to_string(max_y) <<")"; 
+        text << "key: "
+             << "right "
+             << " old pos:(" << to_string(current_x) << "," << to_string(current_y) << ")"
+             << " new pos:(" << to_string(new_x) << "," << to_string(new_y) << ") max pos: (" << to_string(max_x) << "," << to_string(max_y) << ")";
         UpdateStatusRow(text.str());
         break;
     }
@@ -175,8 +185,12 @@ void ECController::HandleKey(int key)
         int current_x = _TextViewImp->GetCursorX();
         int max_x = Rows[current_y].length();
         int max_y = _TextViewImp->GetRowNumInView() - 1;
-        int new_x = NULL;
-        int new_y = NULL; //potenital bug?
+        int new_x = _TextViewImp->GetCursorX();
+        int new_y = _TextViewImp->GetCursorY();
+
+        if (current_y == 0)
+            HandleWrapUp();
+
         if (current_y > 0)
         {
             int prev_row_length = Rows[current_y - 1].length();
@@ -184,13 +198,12 @@ void ECController::HandleKey(int key)
             _TextViewImp->SetCursorY(current_y - 1);
             _TextViewImp->SetCursorX(new_x);
         }
-        HandleWrapUp();
-
 
         std::ostringstream text;
-        text << "key: " << "up " << " old pos:(" << to_string(current_x) << 
-        "," << to_string(current_y) <<")" << " new pos:(" << to_string(new_x) << "," << to_string(new_y) <<
-         " ) max pos: (" << to_string(max_x) <<","<< to_string(max_y) <<")"; 
+        text << "key: "
+             << "up "
+             << " old pos:(" << to_string(current_x) << "," << to_string(current_y) << ")"
+             << " new pos:(" << to_string(new_x) << "," << to_string(new_y) << ") max pos: (" << to_string(max_x) << "," << to_string(max_y) << ")";
         UpdateStatusRow(text.str());
         break;
     }
@@ -200,26 +213,26 @@ void ECController::HandleKey(int key)
         int current_x = _TextViewImp->GetCursorX();
         int max_x = Rows[current_y].length();
         int max_y = _TextViewImp->GetRowNumInView() - 1;
-        int new_x = NULL;
-        int new_y = NULL; //potenital bug?
+        int new_x = _TextViewImp->GetCursorX();
+        int new_y = _TextViewImp->GetCursorY();
 
+        if (current_y == max_y)
+            HandleWrapDown();
 
-
-        
         if (current_y <= max_y)
         {
             int next_row_length = Rows[current_y + 1].length();
-            int new_x = min(current_x, next_row_length);
+            new_x = min(current_x, next_row_length);
 
             _TextViewImp->SetCursorY(min(max_y, current_y + 1));
             _TextViewImp->SetCursorX(new_x);
         }
-        HandleWrapDown();
 
         std::ostringstream text;
-        text << "key: " << "down " << " old pos:(" << to_string(current_x) << 
-        "," << to_string(current_y) <<")" << " new pos:(" << to_string(new_x) << "," << to_string(new_y) << 
-        " ) max pos: (" << to_string(max_x) <<","<< to_string(max_y) <<")"; 
+        text << "key: "
+             << "down "
+             << " old pos:(" << to_string(current_x) << "," << to_string(current_y) << ")"
+             << " new pos:(" << to_string(new_x) << "," << to_string(new_y) << ") max pos: (" << to_string(max_x) << "," << to_string(max_y) << ")";
         UpdateStatusRow(text.str());
 
         break;
@@ -232,20 +245,20 @@ void ECController::HandleKey(int key)
         int current_x = _TextViewImp->GetCursorX();
         int max_x = Rows[current_y].length();
         int max_y = _TextViewImp->GetRowNumInView() - 1;
-        int new_x = NULL;
-        int new_y = NULL; //potenital bug?
-
+        int new_x = _TextViewImp->GetCursorX();
+        int new_y = _TextViewImp->GetCursorY();
 
         string tt = to_string(_TextViewImp->GetRowNumInView());
         curStatus = "command";
         _TextViewImp->ClearStatusRows();
         _TextViewImp->AddStatusRow("ctrl-h for help", "mode: " + tt, true);
-        
+
         std::ostringstream text;
-        text << "key: " << "esc " << " old pos:(" << to_string(current_x) << 
-        "," << to_string(current_y) <<")" << " new pos:(" << to_string(new_x) << "," << to_string(new_y) <<
-        " ) max pos: (" << to_string(max_x) <<","<< to_string(max_y) <<")"; 
-        UpdateStatusRow(text.str());        
+        text << "key: "
+             << "esc "
+             << " old pos:(" << to_string(current_x) << "," << to_string(current_y) << ")"
+             << " new pos:(" << to_string(new_x) << "," << to_string(new_y) << ") max pos: (" << to_string(max_x) << "," << to_string(max_y) << ")";
+        UpdateStatusRow(text.str());
         break;
     }
 
@@ -293,27 +306,24 @@ void ECController::HandleKey(int key)
 
 void ECController::AddText(char ch)
 {
-            int current_y = _TextViewImp->GetCursorY();
-        int current_x = _TextViewImp->GetCursorX();
-        int max_x = Rows[current_y].length();
-        int max_y = _TextViewImp->GetRowNumInView() - 1;
-        
+    int current_y = _TextViewImp->GetCursorY();
+    int current_x = _TextViewImp->GetCursorX();
+    int max_x = Rows[current_y].length();
+    int max_y = _TextViewImp->GetRowNumInView() - 1;
 
     ECCommand *command = new InsertTextCommand(_TextViewImp, this, ch);
     command->execute();
     CommandStack.push(command);
     HighlightKeywords();
 
-
-    int new_x = NULL;
-    int new_y = NULL; //potenital bug?
-
-
+    int new_x = _TextViewImp->GetCursorX();
+    int new_y = _TextViewImp->GetCursorY();
 
     std::ostringstream text;
-    text << "key: " << "right " << " old pos:(" << to_string(current_x) << 
-    "," << to_string(current_y) <<")" << " new pos:(" << to_string(new_x) << "," << to_string(new_y) <<
-    " ) max pos: (" << to_string(max_x) <<","<< to_string(max_y) <<")"; 
+    text << "key: "
+         << "right "
+         << " old pos:(" << to_string(current_x) << "," << to_string(current_y) << ")"
+         << " new pos:(" << to_string(new_x) << "," << to_string(new_y) << ") max pos: (" << to_string(max_x) << "," << to_string(max_y) << ")";
     UpdateStatusRow(text.str());
 }
 
@@ -354,26 +364,29 @@ void ECController::HandleEnter()
     if (curStatus == "command")
         return;
 
-        int current_x = _TextViewImp->GetCursorX();
-        int current_y = _TextViewImp->GetCursorY();
-        int max_x = _TextViewImp->GetRowNumInView() - 1;
-        int max_y = _TextViewImp->GetRowNumInView() - 1;
-        int new_x = NULL;
-        int new_y = NULL; //potenital bug?
-        int rows_size = Rows[current_y].length();
-        
-    
+    int current_x = _TextViewImp->GetCursorX();
+    int current_y = _TextViewImp->GetCursorY();
+    int max_x = _TextViewImp->GetRowNumInView() - 1;
+    int max_y = _TextViewImp->GetRowNumInView() - 1;
+    int new_x = _TextViewImp->GetCursorX();
+    int new_y = _TextViewImp->GetCursorY();
+    int rows_size = Rows[current_y].length();
+
     ECCommand *command = new EnterCommand(_TextViewImp, this);
     command->execute();
     CommandStack.push(command);
-    HandleWrapDown();
 
-    
+    if (current_y == max_y)
+        HandleWrapDown();
+
+
     std::ostringstream text;
-    text << "key: " << "enter " << " old pos:(" << to_string(current_x) << 
-    "," << to_string(current_y) <<")" << " new pos:(" << to_string(new_x) << "," << to_string(new_y) <<
-    " ) max pos: (" << to_string(max_x) <<","<< to_string(max_y) <<")"; 
-    UpdateStatusRow(text.str());}
+    text << "key: "
+         << "enter "
+         << " old pos:(" << to_string(current_x) << "," << to_string(current_y) << ")"
+         << " new pos:(" << to_string(new_x) << "," << to_string(new_y) << ") max pos: (" << to_string(max_x) << "," << to_string(max_y) << ")";
+    UpdateStatusRow(text.str());
+}
 
 void ECController::Undo()
 {
