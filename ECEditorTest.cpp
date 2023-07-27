@@ -3,7 +3,7 @@
 #include "ECModel.h"
 #include "ECController.h"
 #include <iostream>
-
+using namespace std;
 int main(int argc, char *argv[])
 {
 

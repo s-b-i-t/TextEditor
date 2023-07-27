@@ -1,10 +1,4 @@
-//
 //  ECObserver.h
-//
-//
-//  Created by Yufeng Wu on 2/27/20.
-//
-//
 
 #ifndef ECOBERVER_H
 #define ECOBERVER_H
@@ -12,18 +6,12 @@
 #include <vector>
 #include <algorithm>
 
-//********************************************
-// Observer design pattern: observer interface
-
 class ECObserver
 {
 public:
     virtual ~ECObserver() {}
     virtual void Update() = 0;
 };
-
-//********************************************
-// Observer design pattern: subject
 
 class ECObserverSubject
 {
@@ -49,6 +37,5 @@ public:
 private:
     std::vector<ECObserver *> listObservers;
 };
-
 
 #endif

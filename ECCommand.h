@@ -4,7 +4,6 @@
 #define ECCOMMAND_H
 #include <string>
 #include "ECTextViewImp.h"
-using namespace std;
 
 class ECController;
 
@@ -15,8 +14,11 @@ public:
     virtual void unexecute() = 0;
 protected:
 
-    int _cursorX;
-    int _cursorY;
+    int current_x;
+    int current_y;
+    int max_x;
+    int max_y;
+    int current_line;
 };
 
 
@@ -59,12 +61,12 @@ public:
 private:
     ECTextViewImp* _TextViewImp;
     ECController* _Controller;
-    string _remaining_text;
+    std::string _remaining_text;
     int _split_pos; 
     bool _removedFromTop = false;
     bool _removedFromBottom = false;
 
-    string _removedRow; 
+    std::string _removedRow; 
 
 };
 
