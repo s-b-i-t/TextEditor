@@ -182,4 +182,3 @@ void EnterCommand::unexecute()
     _Controller->GetRows().erase(_Controller->GetRows().begin() + current_y + 1);
     _Controller->UpdateTextViewImpRows();
 }
-

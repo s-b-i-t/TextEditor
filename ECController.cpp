@@ -31,8 +31,10 @@ void ECController::UpdateStatusRow(int cx, int cy, int nx, int ny, int mx, int m
     _TextViewImp->ClearStatusRows();
 
     std::ostringstream text1;
-    text1 << "current line: " << to_string(Get_Row_Num(ny)) 
-          << " Out of viewline 5? " << (OutofView(5) ? "true" : "false");
+    int p = _TextViewImp->GetRowNumInView();
+    int pp = Rows.size();
+    text1 << "current line: " << to_string(Get_Row_Num(ny)) << " "
+          << to_string(Bottom_Rows.size()) << " "<< to_string(pp);
 
     std::ostringstream text2;
     text2 << "key: " << key
@@ -41,7 +43,6 @@ void ECController::UpdateStatusRow(int cx, int cy, int nx, int ny, int mx, int m
 
     _TextViewImp->AddStatusRow(text1.str(), text2.str(), true);
 }
-
 
 void ECController::OpenFile()
 {
@@ -326,7 +327,7 @@ void ECController::AddText(char ch)
     HighlightKeywords();
 
     int new_x = Get_Cur_X();
-    int new_y = Get_Cur_Y();    
+    int new_y = Get_Cur_Y();
 
     UpdateStatusRow(current_x, current_y, new_x, new_y, max_x, max_y, std::string(1, ch));
 }
@@ -367,8 +368,8 @@ void ECController::RemoveText()
     int new_y = Get_Cur_Y();
     int max_x = Get_Max_X();
     int max_y = Get_Max_Y();
-    
-    UpdateStatusRow(current_x, current_y, new_x, new_y, max_x, max_y, "backspace");    
+
+    UpdateStatusRow(current_x, current_y, new_x, new_y, max_x, max_y, "backspace");
 }
 
 void ECController::HandleEnter()
@@ -510,10 +511,15 @@ void ECController::HandleWrapUp()
     int current_y = Get_Cur_Y();
     if (current_y == 0 && !Top_Rows.empty())
     {
+
         Bottom_Rows.push(Rows[Rows.size() - 1]);
         Rows.pop_back();
         Rows.insert(Rows.begin(), Top_Rows.top());
         Top_Rows.pop();
+
+        if ( Rows.size()  < _TextViewImp->GetRowNumInView() - 1 && !Top_Rows.empty()){
+            Rows.push_back(Bottom_Rows.top());
+        }
         UpdateTextViewImpRows();
     }
 }
@@ -535,6 +541,7 @@ void ECController::UpdateTextViewImpRows()
 {
     _TextViewImp->InitRows();
     int lineNumber = Top_Rows.size();
+    LinesInView.clear();
     if (ShowLines)
     {
         for (const auto &row : Rows)
@@ -557,3 +564,6 @@ void ECController::UpdateTextViewImpRows()
     HighlightKeywords();
     _TextViewImp->Refresh();
 }
+
+
+
