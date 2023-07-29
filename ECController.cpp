@@ -517,7 +517,7 @@ void ECController::HandleWrapUp()
         Rows.insert(Rows.begin(), Top_Rows.top());
         Top_Rows.pop();
 
-        if ( Rows.size()  < _TextViewImp->GetRowNumInView() - 1 && !Top_Rows.empty()){
+        if ( Rows.size()  <=  _TextViewImp->GetRowNumInView() - 1 && !Top_Rows.empty()){
             Rows.push_back(Bottom_Rows.top());
         }
         UpdateTextViewImpRows();
