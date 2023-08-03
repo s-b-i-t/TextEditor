@@ -13,7 +13,7 @@ InsertTextCommand::InsertTextCommand(ECTextViewImp *TextViewImp, ECController *C
     current_line = _Controller->Get_Row_Num(current_y);
 }
 
-void InsertTextCommand::execute() 
+void InsertTextCommand::execute()
 {
     if (current_y > _Controller->GetRows().size())
     {
@@ -25,7 +25,7 @@ void InsertTextCommand::execute()
     _Controller->UpdateTextViewImpRows();
 }
 
-void InsertTextCommand::unexecute() 
+void InsertTextCommand::unexecute()
 {
     _TextViewImp->SetCursorX(current_x);
     _TextViewImp->SetCursorY(current_y);
@@ -40,11 +40,10 @@ RemoveTextCommand::RemoveTextCommand(ECTextViewImp *TextViewImp, ECController *C
     current_y = _Controller->Get_Cur_Y();
     max_x = _Controller->Get_Max_X();
     max_y = _Controller->Get_Max_Y();
-        current_line = _Controller->Get_Row_Num(current_y);
-
+    current_line = _Controller->Get_Row_Num(current_y);
 }
 
-void RemoveTextCommand::execute() 
+void RemoveTextCommand::execute()
 {
     _removedChar = _Controller->GetRows()[current_y].at(current_x - _Controller->GetRowStart() - 1); // Save the character that is about to be removed
     _Controller->GetRows()[current_y].erase(current_x - _Controller->GetRowStart() - 1, 1);
@@ -52,7 +51,7 @@ void RemoveTextCommand::execute()
     _Controller->UpdateTextViewImpRows();
 }
 
-void RemoveTextCommand::unexecute() 
+void RemoveTextCommand::unexecute()
 {
     _TextViewImp->SetCursorX(current_x - 1);
     _TextViewImp->SetCursorY(current_y);
@@ -68,38 +67,32 @@ MergeLinesCommand::MergeLinesCommand(ECTextViewImp *TextViewImp, ECController *C
     max_x = _Controller->Get_Max_X();
     max_y = _Controller->Get_Max_Y();
     current_line = _Controller->Get_Row_Num(current_y);
-
 }
 
-void MergeLinesCommand::execute() 
+void MergeLinesCommand::execute()
 {
+    string &merged_row = _Controller->GetRows()[current_y - 1];
+    int new_x = merged_row.size() + _Controller->GetRowStart();
     string row_contents = _Controller->GetRows()[current_y];
-    _Controller->GetRows()[current_y - 1].append(row_contents);  // Merge the current line with the previous one
+    merged_row.insert(merged_row.end(), row_contents.begin(), row_contents.end());
 
-    // Instead of erasing the current line, shift all the lines below it up by one
-    for (int i = current_y; i < _Controller->GetRows().size() - 1; ++i)
-    {
-        _Controller->GetRows()[i] = _Controller->GetRows()[i + 1];
-    }
+    _Controller->GetRows().erase(_Controller->GetRows().begin() + current_y);
 
-    // If there are lines in Bottom_Rows, bring the top one into view
-    if (!_Controller->Get_Bottom_Rows().empty()) 
-    {
-        _Controller->GetRows().back() = _Controller->Get_Bottom_Rows().top();
-        _Controller->Get_Bottom_Rows().pop();
-    }
-    else  // If there are no lines in Bottom_Rows, simply erase the last line in view
-    {
-        _Controller->GetRows().pop_back();
-    }
-
-    _TextViewImp->SetCursorX(_Controller->GetRows()[current_y - 1].size() + _Controller->GetRowStart());
+    _TextViewImp->SetCursorX(new_x);
     _TextViewImp->SetCursorY(current_y - 1);
+
+    if (! _Controller->Get_Bottom_Rows().empty())
+    {
+        _Controller->Get_Bottom_Rows().pop();
+        if(!_Controller->Get_Bottom_Rows().empty()) {
+            _Controller->GetRows().push_back(_Controller->Get_Bottom_Rows().top());
+        }
+    }
     _Controller->UpdateTextViewImpRows();
 }
 
 
-void MergeLinesCommand::unexecute() 
+void MergeLinesCommand::unexecute()
 {
     int split_pos = _Controller->GetRows()[current_y].size() - current_x;
     _TextViewImp->SetCursorY(current_y);
@@ -107,10 +100,9 @@ void MergeLinesCommand::unexecute()
     string new_row = _Controller->GetRows()[current_y].substr(split_pos);
     _Controller->GetRows()[current_y] = _Controller->GetRows()[current_y].substr(0, split_pos);
     _Controller->GetRows().insert(_Controller->GetRows().begin() + current_y + 1, new_row);
+
     _Controller->UpdateTextViewImpRows();
 }
-
-
 
 //
 EnterCommand::EnterCommand(ECTextViewImp *TextViewImp, ECController *Controller) : _TextViewImp(TextViewImp), _Controller(Controller)
@@ -120,12 +112,11 @@ EnterCommand::EnterCommand(ECTextViewImp *TextViewImp, ECController *Controller)
     max_x = _Controller->Get_Max_X();
     max_y = _Controller->Get_Max_Y();
     current_line = _Controller->Get_Row_Num(current_y);
-
 }
 
-void EnterCommand::execute() 
+void EnterCommand::execute()
 {
-    _split_pos = current_x - _Controller->GetRowStart();  // consider the offset of line numbers
+    _split_pos = current_x - _Controller->GetRowStart(); // consider the offset of line numbers
     _removedFromTop = false;
     _removedFromBottom = false;
 
@@ -160,10 +151,7 @@ void EnterCommand::execute()
     _Controller->UpdateTextViewImpRows();
 }
 
-
-
-
-void EnterCommand::unexecute() 
+void EnterCommand::unexecute()
 {
     if (_removedFromTop)
     {

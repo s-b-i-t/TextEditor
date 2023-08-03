@@ -108,6 +108,12 @@ private:
     std::vector<string> Left_Chars;
     std::vector<string> Right_Chars;
 
+    //Handle user arrow movement
+    void HandleUp();
+    void HandleDown();
+    void HandleRight();
+    void HandleLeft();
+
     // Text wrapping to shift view
     // Does not modify cursor
     void HandleWrapDown();
@@ -129,6 +135,7 @@ private:
     std::stack<ECCommand *> RedoStack;
 
     std::unordered_set<int> LinesInView;
+    std::string lastkey = "";
 };
 
 #endif

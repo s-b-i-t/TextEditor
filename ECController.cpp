@@ -28,18 +28,20 @@ ECController::ECController(ECTextViewImp *TextViewImp, const std::string &filena
 // debugging purposes
 void ECController::UpdateStatusRow(int cx, int cy, int nx, int ny, int mx, int my, string key)
 {
+    string oldKey = lastkey;
+    lastkey = key;
+
     _TextViewImp->ClearStatusRows();
 
     std::ostringstream text1;
-    int p = _TextViewImp->GetRowNumInView();
-    int pp = Rows.size();
-    text1 << "current line: " << to_string(Get_Row_Num(ny)) << " "
-          << to_string(Bottom_Rows.size()) << " "<< to_string(pp);
+
+    text1 << "key: " << key << ", last key: " << oldKey
+          << " rows in view " << to_string(_TextViewImp->GetRowNumInView())
+          << " Rows size " << to_string(Rows.size());
 
     std::ostringstream text2;
-    text2 << "key: " << key
-          << " old pos:(" << to_string(cx) << "," << to_string(cy) << ")"
-          << " new pos:(" << to_string(nx) << "," << to_string(ny) << ") max pos: (" << to_string(mx) << "," << to_string(my) << ")";
+    text2 << "pos:(" << nx << "," << ny << ")"
+          << ", max:(" << mx << "," << my << ")";
 
     _TextViewImp->AddStatusRow(text1.str(), text2.str(), true);
 }
@@ -127,133 +129,25 @@ void ECController::HandleKey(int key)
     {
     case ARROW_LEFT:
     {
-        int current_y = Get_Cur_Y();
-        int current_x = Get_Cur_X();
-        int max_x = Get_Max_X();
-        int max_y = Get_Max_Y();
-
-        int new_x = current_x;
-        int new_y = current_y;
-
-        if (current_x == GetRowStart())
-            HandleWrapUp();
-
-        if (current_x > GetRowStart())
-        {
-            new_x = current_x - 1;
-        }
-
-        else if (current_y > 0)
-        {
-            int prev_row_length = Rows[current_y - 1].length();
-            new_y = current_y - 1;
-            new_x = prev_row_length + GetRowStart(); // potential bug
-        }
-
-        _TextViewImp->SetCursorX(new_x);
-        _TextViewImp->SetCursorY(new_y);
-
-        UpdateStatusRow(current_x, current_y, new_x, new_y, max_x, max_y, "left");
+        HandleLeft();
         break;
     }
 
     case ARROW_RIGHT:
     {
-        int current_y = Get_Cur_Y();
-        int current_x = Get_Cur_X();
-        int max_x = Get_Max_X();
-        int max_y = Get_Max_Y();
-
-        int new_y = Get_Cur_Y();
-        int new_x = Get_Cur_X();
-
-        if (Bottom_Rows.empty() && current_y == max_y && current_x == max_x)
-            return;
-
-        if (current_x < max_x)
-        {
-            new_x = current_x + 1;
-        }
-        else if (current_y < max_y)
-        {
-            new_y = current_y + 1;
-            new_x = GetRowStart();
-        }
-        else if (current_y == max_y && current_x == max_x && !Bottom_Rows.empty())
-        {
-            HandleWrapDown();
-            new_x = GetRowStart();
-        }
-
-        _TextViewImp->SetCursorX(new_x);
-        _TextViewImp->SetCursorY(new_y);
-
-        UpdateStatusRow(current_x, current_y, new_x, new_y, max_x, max_y, "right");
-
+        HandleRight();
         break;
     }
 
     case ARROW_UP:
     {
-        int current_y = Get_Cur_Y();
-        int current_x = Get_Cur_X();
-        int max_x = Get_Max_X();
-        int max_y = Get_Max_Y();
-
-        int new_y = current_y;
-        int new_x = current_x;
-
-        if (current_y > 0)
-        {
-            new_y = current_y - 1;
-            int prev_row_length = Rows[new_y].length();
-            new_x = min(current_x, prev_row_length + GetRowStart());
-        }
-        else if (current_y == 0 && !Top_Rows.empty())
-        {
-            HandleWrapUp();
-            new_y = 0; // since we're wrapping stay at the top row
-            int prev_row_length = Rows[new_y].length();
-            new_x = min(current_x, prev_row_length + GetRowStart());
-        }
-
-        _TextViewImp->SetCursorY(new_y);
-        _TextViewImp->SetCursorX(new_x);
-
-        UpdateStatusRow(current_x, current_y, new_x, new_y, max_x, max_y, "up");
-
+        HandleUp();
         break;
     }
 
     case ARROW_DOWN:
     {
-        int current_y = Get_Cur_Y();
-        int current_x = Get_Cur_X();
-        int max_x = Get_Max_X();
-        int max_y = Get_Max_Y();
-
-        int new_y = current_y;
-        int new_x = current_x;
-
-        if (current_y < max_y)
-        {
-            new_y = current_y + 1;
-            int next_row_length = Rows[new_y].length();
-            new_x = min(current_x, next_row_length + GetRowStart());
-        }
-        else if (current_y == max_y && !Bottom_Rows.empty())
-        {
-            HandleWrapDown();
-            new_y = max_y; // since we're wrapping stay at the bottom row
-            int next_row_length = Rows[new_y].length();
-            new_x = min(current_x, next_row_length + GetRowStart());
-        }
-
-        _TextViewImp->SetCursorY(new_y);
-        _TextViewImp->SetCursorX(new_x);
-
-        UpdateStatusRow(current_x, current_y, new_x, new_y, max_x, max_y, "down");
-
+        HandleDown();
         break;
     }
     case ESC:
@@ -314,6 +208,131 @@ void ECController::HandleKey(int key)
     _TextViewImp->Refresh();
 }
 
+void ECController::HandleUp()
+{
+    int current_y = Get_Cur_Y();
+    int current_x = Get_Cur_X();
+    int max_x = Get_Max_X();
+    int max_y = Get_Max_Y();
+    int new_y = current_y;
+    int new_x = current_x;
+
+    if (current_y == 0)
+    {
+        if (Top_Rows.empty())
+        {
+            return;
+        }
+        HandleWrapUp();
+    }
+    else
+    {
+        new_y = current_y - 1;
+        int prev_row_length = Rows[new_y].length();
+        new_x = min(current_x, prev_row_length + GetRowStart());
+    }
+
+    _TextViewImp->SetCursorY(new_y);
+    _TextViewImp->SetCursorX(new_x);
+
+    UpdateStatusRow(current_x, current_y, new_x, new_y, max_x, max_y, "up");
+}
+
+void ECController::HandleDown()
+{
+    int current_y = Get_Cur_Y();
+    int current_x = Get_Cur_X();
+    int max_x = Get_Max_X();
+    int max_y = Get_Max_Y();
+
+    int new_y = current_y;
+    int new_x = current_x;
+
+    if (current_y < max_y)
+    {
+        new_y = current_y + 1;
+        int next_row_length = Rows[new_y].length();
+        new_x = min(current_x, next_row_length + GetRowStart());
+    }
+    else if (current_y == max_y && !Bottom_Rows.empty())
+    {
+        HandleWrapDown();
+        new_y = max_y; // since we're wrapping stay at the bottom row
+        int next_row_length = Rows[new_y].length();
+        new_x = min(current_x, next_row_length + GetRowStart());
+    }
+
+    _TextViewImp->SetCursorY(new_y);
+    _TextViewImp->SetCursorX(new_x);
+
+    UpdateStatusRow(current_x, current_y, new_x, new_y, max_x, max_y, "down");
+}
+
+void ECController::HandleRight()
+{
+    int current_y = Get_Cur_Y();
+    int current_x = Get_Cur_X();
+    int max_x = Get_Max_X();
+    int max_y = Get_Max_Y();
+
+    int new_y = Get_Cur_Y();
+    int new_x = Get_Cur_X();
+
+    if (Bottom_Rows.empty() && current_y == max_y && current_x == max_x)
+        return;
+
+    if (current_x < max_x)
+    {
+        new_x = current_x + 1;
+    }
+    else if (current_y < max_y)
+    {
+        new_y = current_y + 1;
+        new_x = GetRowStart();
+    }
+    else if (current_y == max_y && current_x == max_x && !Bottom_Rows.empty())
+    {
+        HandleWrapDown();
+        new_x = GetRowStart();
+    }
+
+    _TextViewImp->SetCursorX(new_x);
+    _TextViewImp->SetCursorY(new_y);
+
+    UpdateStatusRow(current_x, current_y, new_x, new_y, max_x, max_y, "right");
+}
+
+void ECController::HandleLeft()
+{
+    int current_y = Get_Cur_Y();
+    int current_x = Get_Cur_X();
+    int max_x = Get_Max_X();
+    int max_y = Get_Max_Y();
+
+    int new_x = current_x;
+    int new_y = current_y;
+
+    if (current_x == GetRowStart())
+        HandleWrapUp();
+
+    if (current_x > GetRowStart())
+    {
+        new_x = current_x - 1;
+    }
+
+    else if (current_y > 0)
+    {
+        int prev_row_length = Rows[current_y - 1].length();
+        new_y = current_y - 1;
+        new_x = prev_row_length + GetRowStart(); // potential bug
+    }
+
+    _TextViewImp->SetCursorX(new_x);
+    _TextViewImp->SetCursorY(new_y);
+
+    UpdateStatusRow(current_x, current_y, new_x, new_y, max_x, max_y, "left");
+}
+
 void ECController::AddText(char ch)
 {
     int current_y = Get_Cur_Y();
@@ -339,27 +358,28 @@ void ECController::RemoveText()
     int current_y = Get_Cur_Y();
 
     if (current_x == GetRowStart() && current_y == 0)
-        HandleWrapUp(); // cursor should go to last char
+        if (Top_Rows.empty())
+        {
+            return;
+        }
+        else
+        {
+            HandleWrapUp();
+            _TextViewImp->SetCursorY(current_y + 1);
+        }
 
-    if (current_y >= Rows.size())
+    if (current_x == GetRowStart())
     {
-        return;
-    }
-
-    if (current_x > GetRowStart())
-    {
-        ECCommand *command = new RemoveTextCommand(_TextViewImp, this);
+        ECCommand *command = new MergeLinesCommand(_TextViewImp, this);
         command->execute();
         CommandStack.push(command);
     }
     else
     {
-        if (current_y > 0)
-        {
-            ECCommand *command = new MergeLinesCommand(_TextViewImp, this);
-            command->execute();
-            CommandStack.push(command);
-        }
+
+        ECCommand *command = new RemoveTextCommand(_TextViewImp, this);
+        command->execute();
+        CommandStack.push(command);
     }
 
     HighlightKeywords();
@@ -374,9 +394,6 @@ void ECController::RemoveText()
 
 void ECController::HandleEnter()
 {
-    if (curStatus == "command")
-        return;
-
     int current_y = Get_Cur_Y();
     int current_x = Get_Cur_X();
     int max_x = Get_Max_X();
@@ -389,7 +406,9 @@ void ECController::HandleEnter()
     CommandStack.push(command);
 
     if (current_y == max_y)
-        HandleWrapUp();
+        HandleWrapDown();
+
+
     int new_x = Get_Cur_X();
     int new_y = Get_Cur_Y();
 
@@ -509,19 +528,23 @@ void ECController::HandleWrapDown()
 void ECController::HandleWrapUp()
 {
     int current_y = Get_Cur_Y();
-    if (current_y == 0 && !Top_Rows.empty())
-    {
 
-        Bottom_Rows.push(Rows[Rows.size() - 1]);
+    if (Rows.size() <= _TextViewImp->GetRowNumInView() - 1 && !Top_Rows.empty())
+    {
+        Rows.insert(Rows.begin(), Top_Rows.top());
+        Top_Rows.pop();
+    }
+
+    else if (!Top_Rows.empty())
+    {
+        string lastrow = Rows.back();
+        Bottom_Rows.push(lastrow);
         Rows.pop_back();
         Rows.insert(Rows.begin(), Top_Rows.top());
         Top_Rows.pop();
-
-        if ( Rows.size()  <=  _TextViewImp->GetRowNumInView() - 1 && !Top_Rows.empty()){
-            Rows.push_back(Bottom_Rows.top());
-        }
-        UpdateTextViewImpRows();
     }
+
+    UpdateTextViewImpRows();
 }
 
 void ECController ::HandleWrapRight()
@@ -564,6 +587,3 @@ void ECController::UpdateTextViewImpRows()
     HighlightKeywords();
     _TextViewImp->Refresh();
 }
-
-
-
