@@ -17,7 +17,7 @@ void ECModel::Update()
     {
         _Controller->RemoveText();
     }
-    else if (key >= 32 && key <= 126 && _Controller->getCurStatus() == "insert")
+    else if (key >= 32 && key <= 126)
     {
         char ch = static_cast<char>(key);
         _Controller->AddText(ch);

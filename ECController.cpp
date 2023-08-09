@@ -13,7 +13,7 @@
 #include <iomanip>
 
 using namespace std;
-
+a
 ECController::ECController(ECTextViewImp *TextViewImp, const std::string &filename) : _TextViewImp(TextViewImp), _filename(filename)
 {
     OpenFile();
@@ -170,16 +170,12 @@ void ECController::HandleKey(int key)
     {
         curStatus = "command";
         _TextViewImp->ClearStatusRows();
-        _TextViewImp->AddStatusRow("ctrl-h for help", "mode: " + curStatus, true);
-
         break;
     }
     case 105: // i ascii value
     {
         curStatus = "insert";
         _TextViewImp->ClearStatusRows();
-        _TextViewImp->AddStatusRow("ctrl-h for help", "mode: " + curStatus, true);
-
         break;
     }
 
