@@ -20,8 +20,13 @@ void InsertTextCommand::execute()
         _Controller->GetRows().resize(current_y + 1);
     }
 
+    if (current_x == _TextViewImp->GetColNumInView() - 1)
+        current_x -= 1;
+    
     _Controller->GetRows()[current_y].insert(current_x - _Controller->GetRowStart(), 1, _ch);
-    _TextViewImp->SetCursorX(current_x + 1);
+
+    if (current_x < _TextViewImp->GetColNumInView() - 1)
+        _TextViewImp->SetCursorX(current_x + 1);
     _Controller->UpdateTextViewImpRows();
 }
 

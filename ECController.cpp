@@ -13,7 +13,6 @@
 #include <iomanip>
 
 using namespace std;
-a
 ECController::ECController(ECTextViewImp *TextViewImp, const std::string &filename) : _TextViewImp(TextViewImp), _filename(filename)
 {
     OpenFile();
@@ -36,11 +35,12 @@ void ECController::UpdateStatusRow(int cx, int cy, int nx, int ny, int mx, int m
     std::ostringstream text1;
 
     text1 << "key: " << key << ", last key: " << oldKey
-          << " rows in view " << to_string(_TextViewImp->GetRowNumInView())
-          << " Rows size " << to_string(Rows.size());
+          << " left" << to_string(_TextViewImp->GetRowNumInView())
+          << " Rows " << to_string(Rows.size());
 
     std::ostringstream text2;
-    text2 << "pos:(" << nx << "," << ny << ")"
+    text2 << " cols in view " << to_string(_TextViewImp->GetColNumInView())  
+          << " pos:(" << nx << "," << ny << ")"
           << ", max:(" << mx << "," << my << ")";
 
     _TextViewImp->AddStatusRow(text1.str(), text2.str(), true);
@@ -336,6 +336,9 @@ void ECController::AddText(char ch)
     int max_x = Get_Max_X();
     int max_y = Get_Max_Y();
 
+    HandleWrapRight();
+    // if (current_x == _TextViewImp->GetColNumInView() - 1)
+    //     return;
     ECCommand *command = new InsertTextCommand(_TextViewImp, this, ch);
     command->execute();
     CommandStack.push(command);
@@ -403,7 +406,6 @@ void ECController::HandleEnter()
 
     if (current_y == max_y)
         HandleWrapDown();
-
 
     int new_x = Get_Cur_X();
     int new_y = Get_Cur_Y();
@@ -543,13 +545,44 @@ void ECController::HandleWrapUp()
     UpdateTextViewImpRows();
 }
 
-void ECController ::HandleWrapRight()
+void ECController::HandleWrapRight()
 {
     int current_y = Get_Cur_Y();
     int current_x = Get_Cur_X();
-    int max_x = Get_Max_X();
-    int max_y = Get_Max_Y();
+
+    // Check if the cursor is at the last column in the view
+    if (current_x == _TextViewImp->GetColNumInView() - 1)
+    {
+        // Loop through each line number in view
+        for (const auto line : LinesInView)
+        {
+            // Check if the row for this line is not empty
+            if (!Rows[line - 1].empty())
+            {
+                // Resize Left_Chars if needed to accommodate the current line number
+                if (Left_Chars.size() < line)
+                {
+                    Left_Chars.resize(line);
+                }
+
+                // Check if Left_Chars[line - 1] is empty, and initialize it if needed
+                if (Left_Chars[line - 1].empty())
+                {
+                    Left_Chars[line - 1] = Rows[line - 1][0];  // Store the first character in Left_Chars
+                    Rows[line - 1].erase(0, 1);  // Erase the first character from the row
+                }
+                else
+                {
+                    // Append the first character of the row to Left_Chars[line - 1]
+                    Left_Chars[line - 1] += Rows[line - 1][0];
+                    Rows[line - 1].erase(0, 1);  // Erase the first character from the row
+                }
+            }
+        }
+    }
+    UpdateTextViewImpRows();
 }
+
 
 void ECController ::HandleWrapLeft()
 {
