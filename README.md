@@ -7,5 +7,3 @@ This repository contains a lightweight text editor for Linux systems (also suppo
 - **Build System**: Makefile
 - **Platform**: Linux, Windows Subsystem for Linux
 - **Design Patterns**: MVC (Model-View-Controller), Command
-
-You can explore the project [here](https://github.com/s-b-i-t/TextEditor).
