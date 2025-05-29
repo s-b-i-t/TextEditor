@@ -7,3 +7,7 @@ This repository contains a lightweight text editor for Linux systems (also suppo
 - **Build System**: Makefile
 - **Platform**: Linux, Windows Subsystem for Linux
 - **Design Patterns**: MVC (Model-View-Controller), Command
+
+
+## To run 
+Build exe using makefile and add it to system path
