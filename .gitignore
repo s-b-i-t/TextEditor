@@ -1,0 +1,9 @@
+bin/
+build/
+dist/
+*.o
+*.d
+*.out
+*.swp
+*.swo
+.vscode/
